@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カード配置アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .grabbing {
+            cursor: grabbing;
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-back {
+            background-color: #4A90E2;
+            color: white;
+            transform: rotateY(180deg);
+            border: 2px solid white;
+        }
+        dialog::backdrop {
+          background: rgba(0, 0, 0, 0.5);
+        }
+        #canvas {
+            width: 3000px;
+            height: 3000px;
+        }
+        #save-feedback {
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* ★★★ 個別削除ボタンのスタイル ★★★ */
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 28px;
+            height: 28px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            border: 2px solid white;
+            z-index: 10;
+            transform: scale(0.8);
+        }
+        .card-container:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen w-screen">
+        <!-- 左側のカード配置エリア -->
+        <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-auto">
+            <div id="canvas" class="relative bg-green-800"></div>
+            <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none">
+                <h1 class="font-bold text-xl">カード配置エリア</h1>
+                <p class="text-sm">・カードはダブルクリックで裏返せます。</p>
+                <p class="text-sm">・カードをドラッグして好きな場所に移動できます。</p>
+                <p class="text-sm">・カード右上の×ボタンで個別削除できます。</p>
+            </div>
+        </main>
+
+        <!-- 右側のコントロールパネル -->
+        <aside class="w-72 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
+            <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                カードを追加
+            </button>
+            <div class="pt-4 border-t border-gray-300 space-y-2">
+                 <button id="save-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    レイアウトを保存
+                </button>
+                <p id="save-feedback" class="text-center text-green-700 font-semibold opacity-0 h-4"></p>
+                <button id="clear-layout-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    全カードを削除
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- カード追加モーダル -->
+    <dialog id="add-card-modal" class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <form id="add-card-form">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800">新しいカードを作成</h3>
+            <fieldset class="mb-4">
+                <legend class="font-semibold mb-2 text-gray-700">カードの種類</legend>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2"><input type="radio" name="cardType" value="playingCard" checked class="form-radio h-5 w-5 text-blue-600"><span class="text-gray-700">トランプ</span></label>
+                    <label class="flex items-center space-x-2"><input type="radio" name="cardType" value="colorCard" class="form-radio h-5 w-5 text-blue-600"><span class="text-gray-700">色カード</span></label>
+                </div>
+            </fieldset>
+            <fieldset id="playing-card-options" class="space-y-4">
+                <div>
+                    <label for="suit" class="block font-semibold mb-1 text-gray-700">スート (マーク)</label>
+                    <select id="suit" name="suit" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="♠">スペード (♠)</option><option value="♥">ハート (♥)</option><option value="♦">ダイヤ (♦)</option><option value="♣">クラブ (♣)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rank" class="block font-semibold mb-1 text-gray-700">ランク (数字)</label>
+                    <select id="rank" name="rank" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="A">A</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="J">J</option><option value="Q">Q</option><option value="K">K</option>
+                    </select>
+                </div>
+            </fieldset>
+            <fieldset id="color-card-options" class="hidden">
+                <div>
+                    <label for="color" class="block font-semibold mb-1 text-gray-700">色を選択</label>
+                    <input type="color" id="color" name="color" value="#ff0000" class="w-full h-12 p-1 border border-gray-300 rounded-md cursor-pointer">
+                </div>
+            </fieldset>
+            <div class="mt-8 flex justify-end space-x-4">
+                <button type="button" id="cancel-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">キャンセル</button>
+                <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-semibold">作成</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ★★★ 確認モーダルを追加 ★★★ -->
+    <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">確認</h3>
+        <p id="confirm-message" class="text-gray-700 mb-6">本当に実行しますか？</p>
+        <div class="flex justify-end space-x-4">
+            <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">いいえ</button>
+            <button id="confirm-ok-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">はい</button>
+        </div>
+    </dialog>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const board = document.getElementById('board');
+        const canvas = document.getElementById('canvas');
+        const addCardBtn = document.getElementById('add-card-btn');
+        const modal = document.getElementById('add-card-modal');
+        const addCardForm = document.getElementById('add-card-form');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const cardTypeRadios = document.querySelectorAll('input[name="cardType"]');
+        const playingCardOptions = document.getElementById('playing-card-options');
+        const colorCardOptions = document.getElementById('color-card-options');
+        const saveLayoutBtn = document.getElementById('save-layout-btn');
+        const clearLayoutBtn = document.getElementById('clear-layout-btn');
+        const saveFeedback = document.getElementById('save-feedback');
+        
+        // ★★★ 確認モーダルの要素を取得 ★★★
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmOkBtn = document.getElementById('confirm-ok-btn');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+
+        let activeCard = null;
+        let zIndexCounter = 1;
+        let confirmCallback = null;
+        const STORAGE_KEY = 'cardLayoutApp_v1';
+
+        board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
+        board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
+        
+        loadLayout();
+
+        // --- イベントリスナー ---
+        addCardBtn.addEventListener('click', () => modal.showModal());
+        cancelBtn.addEventListener('click', () => modal.close());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.close();
+        });
+
+        cardTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                playingCardOptions.classList.toggle('hidden', e.target.value !== 'playingCard');
+                colorCardOptions.classList.toggle('hidden', e.target.value !== 'colorCard');
+            });
+        });
+
+        addCardForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cardData = Object.fromEntries(new FormData(addCardForm).entries());
+            cardData.left = `${board.scrollLeft + (board.clientWidth / 2) - 56}px`;
+            cardData.top = `${board.scrollTop + (board.clientHeight / 2) - 80}px`;
+            cardData.zIndex = zIndexCounter++;
+            createCard(cardData);
+            modal.close();
+            addCardForm.reset();
+            playingCardOptions.classList.remove('hidden');
+            colorCardOptions.classList.add('hidden');
+        });
+
+        saveLayoutBtn.addEventListener('click', saveLayout);
+        clearLayoutBtn.addEventListener('click', clearLayout);
+
+        // ★★★ 確認モーダルのイベントリスナー ★★★
+        confirmOkBtn.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            confirmModal.close();
+            confirmCallback = null;
+        });
+        confirmCancelBtn.addEventListener('click', () => {
+            confirmModal.close();
+            confirmCallback = null;
+        });
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) {
+                confirmModal.close();
+                confirmCallback = null;
+            }
+        });
+
+        // --- 関数定義 ---
+
+        /**
+         * ★★★ 確認モーダルを表示する関数 ★★★
+         * @param {string} message - 表示するメッセージ
+         * @param {function} onConfirm - 「はい」が押されたときに実行するコールバック関数
+         */
+        function showConfirm(message, onConfirm) {
+            confirmMessage.textContent = message;
+            confirmCallback = onConfirm;
+            confirmModal.showModal();
+        }
+
+        function createCard(data) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container absolute w-28 h-40 cursor-grab select-none';
+            cardContainer.style.left = data.left;
+            cardContainer.style.top = data.top;
+            cardContainer.style.zIndex = data.zIndex;
+            cardContainer.dataset.cardType = data.cardType;
+
+            const cardInner = document.createElement('div');
+            cardInner.className = 'card-inner';
+
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front bg-white shadow-lg border-2 border-gray-300';
+            
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back text-5xl font-bold';
+            cardBack.textContent = '?';
+
+            if (data.cardType === 'playingCard') {
+                const { suit, rank } = data;
+                cardContainer.dataset.suit = suit;
+                cardContainer.dataset.rank = rank;
+                const color = (suit === '♥' || suit === '♦') ? 'text-red-600' : 'text-black';
+                cardFront.innerHTML = `<div class="w-full h-full relative flex items-center justify-center text-5xl font-bold ${color}">${rank}<div class="absolute top-2 left-2 text-2xl">${suit}</div><div class="absolute bottom-2 right-2 text-2xl transform rotate-180">${suit}</div></div>`;
+            } else {
+                cardContainer.dataset.color = data.color;
+                cardFront.style.backgroundColor = data.color;
+                cardFront.style.border = '2px solid rgba(0,0,0,0.2)';
+            }
+            
+            if (data.flipped) cardContainer.classList.add('flipped');
+            
+            cardInner.appendChild(cardFront);
+            cardInner.appendChild(cardBack);
+            cardContainer.appendChild(cardInner);
+
+            // ★★★ 削除ボタンを作成して追加 ★★★
+            const deleteBtn = document.createElement('div');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // ドラッグイベントの発火を防ぐ
+                showConfirm('このカードを削除しますか？', () => {
+                    cardContainer.remove();
+                });
+            });
+            cardContainer.appendChild(deleteBtn);
+
+            canvas.appendChild(cardContainer);
+
+            makeDraggable(cardContainer);
+            cardContainer.addEventListener('dblclick', () => cardContainer.classList.toggle('flipped'));
+            
+            if (parseInt(data.zIndex) >= zIndexCounter) {
+                zIndexCounter = parseInt(data.zIndex) + 1;
+            }
+        }
+        
+        function makeDraggable(element) {
+            let offsetX, offsetY;
+            function onMouseDown(e) {
+                if (e.target.classList.contains('delete-btn')) return; // 削除ボタン上ではドラッグしない
+                e.preventDefault();
+                activeCard = element;
+                activeCard.classList.add('grabbing');
+                activeCard.style.zIndex = zIndexCounter++;
+                const rect = activeCard.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+            function onMouseMove(e) {
+                if (!activeCard) return;
+                const boardRect = board.getBoundingClientRect();
+                let x = e.clientX - boardRect.left - offsetX + board.scrollLeft;
+                let y = e.clientY - boardRect.top - offsetY + board.scrollTop;
+                x = Math.max(0, Math.min(x, canvas.clientWidth - activeCard.offsetWidth));
+                y = Math.max(0, Math.min(y, canvas.clientHeight - activeCard.offsetHeight));
+                activeCard.style.left = `${x}px`;
+                activeCard.style.top = `${y}px`;
+            }
+            function onMouseUp() {
+                if (activeCard) activeCard.classList.remove('grabbing');
+                activeCard = null;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+            element.addEventListener('mousedown', onMouseDown);
+        }
+
+        function saveLayout() {
+            const cards = Array.from(canvas.querySelectorAll('.card-container'));
+            const layoutData = cards.map(card => {
+                const cardData = { ...card.dataset };
+                cardData.left = card.style.left;
+                cardData.top = card.style.top;
+                cardData.zIndex = card.style.zIndex;
+                cardData.flipped = card.classList.contains('flipped');
+                return cardData;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(layoutData));
+            saveFeedback.textContent = '保存しました！';
+            saveFeedback.style.opacity = 1;
+            setTimeout(() => { saveFeedback.style.opacity = 0; }, 2000);
+        }
+
+        function loadLayout() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                const layoutData = JSON.parse(savedData);
+                if (layoutData.length > 0) {
+                    layoutData.forEach(cardData => createCard(cardData));
+                }
+            }
+        }
+
+        function clearLayout() {
+            // ★★★ カスタム確認モーダルを使用 ★★★
+            showConfirm('本当にすべてのカードを削除しますか？\nこの操作は元に戻せません。', () => {
+                canvas.innerHTML = '';
+                localStorage.removeItem(STORAGE_KEY);
+                zIndexCounter = 1;
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
