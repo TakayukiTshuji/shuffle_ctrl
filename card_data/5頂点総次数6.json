@@ -1,0 +1,1282 @@
+[
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "138px",
+    "top": "25px",
+    "zIndex": "386",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "A",
+    "left": "24px",
+    "top": "25px",
+    "zIndex": "385",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "2",
+    "left": "259.069px",
+    "top": "21.2642px",
+    "zIndex": "11",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "380.673px",
+    "top": "23.6077px",
+    "zIndex": "13",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "505.662px",
+    "top": "23.087px",
+    "zIndex": "15",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "15.3398px",
+    "top": "192.595px",
+    "zIndex": "17",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "7",
+    "left": "388px",
+    "top": "201px",
+    "zIndex": "801",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "146px",
+    "top": "188px",
+    "zIndex": "798",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "507.484px",
+    "top": "188.168px",
+    "zIndex": "27",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "148px",
+    "top": "355px",
+    "zIndex": "393",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "14px",
+    "top": "362px",
+    "zIndex": "394",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "Q",
+    "left": "385.878px",
+    "top": "373.547px",
+    "zIndex": "34",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "K",
+    "left": "261px",
+    "top": "361px",
+    "zIndex": "803",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "10.3922px",
+    "top": "530.06px",
+    "zIndex": "39",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "2",
+    "left": "139.546px",
+    "top": "526.671px",
+    "zIndex": "42",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "524.41px",
+    "top": "546.985px",
+    "zIndex": "44",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "263.756px",
+    "top": "537.351px",
+    "zIndex": "46",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♠",
+    "rank": "5",
+    "left": "13.2566px",
+    "top": "697.485px",
+    "zIndex": "48",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "7",
+    "left": "265.318px",
+    "top": "706.622px",
+    "zIndex": "50",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "140.068px",
+    "top": "710.528px",
+    "zIndex": "52",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "394.474px",
+    "top": "712.872px",
+    "zIndex": "54",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "2",
+    "left": "261px",
+    "top": "186px",
+    "zIndex": "800",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "3",
+    "left": "517px",
+    "top": "373px",
+    "zIndex": "805",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "4",
+    "left": "386.922px",
+    "top": "532.928px",
+    "zIndex": "60",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "5",
+    "left": "517.38px",
+    "top": "714.164px",
+    "zIndex": "62",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "1128px",
+    "top": "36px",
+    "zIndex": "709",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "1368px",
+    "top": "29px",
+    "zIndex": "711",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "6",
+    "left": "1244px",
+    "top": "29px",
+    "zIndex": "710",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "A",
+    "left": "1008px",
+    "top": "29px",
+    "zIndex": "708",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "1128px",
+    "top": "205px",
+    "zIndex": "808",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "Q",
+    "left": "998px",
+    "top": "201px",
+    "zIndex": "811",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "K",
+    "left": "1243px",
+    "top": "371px",
+    "zIndex": "816",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#ff0000",
+    "left": "47px",
+    "top": "1106px",
+    "zIndex": "555",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#0033ff",
+    "left": "173px",
+    "top": "1103px",
+    "zIndex": "556",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#00ff55",
+    "left": "308px",
+    "top": "1104px",
+    "zIndex": "557",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#ffdd00",
+    "left": "446px",
+    "top": "1107px",
+    "zIndex": "558",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#8000ff",
+    "left": "581px",
+    "top": "1114px",
+    "zIndex": "559",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "J",
+    "left": "45px",
+    "top": "1283px",
+    "zIndex": "565",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "Q",
+    "left": "178px",
+    "top": "1450px",
+    "zIndex": "567",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "K",
+    "left": "307px",
+    "top": "1611px",
+    "zIndex": "579",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "A",
+    "left": "444px",
+    "top": "1784px",
+    "zIndex": "589",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "2",
+    "left": "570px",
+    "top": "1967px",
+    "zIndex": "576",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "6",
+    "left": "177px",
+    "top": "1283px",
+    "zIndex": "564",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "7",
+    "left": "584px",
+    "top": "1283px",
+    "zIndex": "561",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "8",
+    "left": "44px",
+    "top": "1454px",
+    "zIndex": "566",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "9",
+    "left": "303px",
+    "top": "1445px",
+    "zIndex": "568",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "10",
+    "left": "449px",
+    "top": "1451px",
+    "zIndex": "569",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "J",
+    "left": "173px",
+    "top": "1615px",
+    "zIndex": "580",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "Q",
+    "left": "444px",
+    "top": "1619px",
+    "zIndex": "578",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "K",
+    "left": "305px",
+    "top": "1788px",
+    "zIndex": "796",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "A",
+    "left": "170px",
+    "top": "1795px",
+    "zIndex": "584",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "2",
+    "left": "42px",
+    "top": "1959px",
+    "zIndex": "582",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "1002px",
+    "top": "371px",
+    "zIndex": "815",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "2",
+    "left": "1256px",
+    "top": "540px",
+    "zIndex": "721",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "1378px",
+    "top": "541px",
+    "zIndex": "720",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "1250px",
+    "top": "718px",
+    "zIndex": "726",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "5",
+    "left": "1125px",
+    "top": "702px",
+    "zIndex": "725",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "308px",
+    "top": "1280px",
+    "zIndex": "563",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "7",
+    "left": "449px",
+    "top": "1282px",
+    "zIndex": "562",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "581px",
+    "top": "1455px",
+    "zIndex": "571",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "46px",
+    "top": "1618px",
+    "zIndex": "581",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "579px",
+    "top": "1621px",
+    "zIndex": "572",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "40px",
+    "top": "1788px",
+    "zIndex": "583",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "K",
+    "left": "163px",
+    "top": "1985px",
+    "zIndex": "586",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "299px",
+    "top": "1954px",
+    "zIndex": "585",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "7",
+    "left": "1247px",
+    "top": "196px",
+    "zIndex": "809",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "8",
+    "left": "1368px",
+    "top": "369px",
+    "zIndex": "819",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "9",
+    "left": "1002px",
+    "top": "539px",
+    "zIndex": "723",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "10",
+    "left": "1374px",
+    "top": "716px",
+    "zIndex": "727",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "2",
+    "left": "1370px",
+    "top": "196px",
+    "zIndex": "812",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "3",
+    "left": "1126px",
+    "top": "373px",
+    "zIndex": "817",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "4",
+    "left": "1123px",
+    "top": "535px",
+    "zIndex": "722",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "5",
+    "left": "997px",
+    "top": "707px",
+    "zIndex": "724",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#ff0000",
+    "left": "704px",
+    "top": "1285px",
+    "zIndex": "560",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#0008ff",
+    "left": "706px",
+    "top": "1455px",
+    "zIndex": "570",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#1eff00",
+    "left": "708px",
+    "top": "1623px",
+    "zIndex": "573",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#ffdd00",
+    "left": "707px",
+    "top": "1794px",
+    "zIndex": "574",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "colorCard",
+    "color": "#8c00ff",
+    "left": "699px",
+    "top": "1961px",
+    "zIndex": "575",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "1247px",
+    "top": "1276px",
+    "zIndex": "730",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "3",
+    "left": "996px",
+    "top": "1278px",
+    "zIndex": "728",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "1122px",
+    "top": "1279px",
+    "zIndex": "729",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "5",
+    "left": "1372px",
+    "top": "1282px",
+    "zIndex": "731",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "7",
+    "left": "1251px",
+    "top": "1440px",
+    "zIndex": "733",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "999px",
+    "top": "1444px",
+    "zIndex": "735",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "1373px",
+    "top": "1445px",
+    "zIndex": "732",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "990px",
+    "top": "1611px",
+    "zIndex": "736",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "1118px",
+    "top": "1612px",
+    "zIndex": "737",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "1381px",
+    "top": "1613px",
+    "zIndex": "739",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "Q",
+    "left": "1382px",
+    "top": "1781px",
+    "zIndex": "740",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "K",
+    "left": "1127px",
+    "top": "1778px",
+    "zIndex": "742",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "1263px",
+    "top": "1779px",
+    "zIndex": "741",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "2",
+    "left": "1126px",
+    "top": "1947px",
+    "zIndex": "745",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "1259px",
+    "top": "1952px",
+    "zIndex": "746",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "983px",
+    "top": "1947px",
+    "zIndex": "744",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "4",
+    "left": "1117px",
+    "top": "1445px",
+    "zIndex": "734",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "5",
+    "left": "1251px",
+    "top": "1610px",
+    "zIndex": "738",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "6",
+    "left": "1000px",
+    "top": "1778px",
+    "zIndex": "743",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "7",
+    "left": "1397px",
+    "top": "1955px",
+    "zIndex": "747",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "8",
+    "left": "576px",
+    "top": "1787px",
+    "zIndex": "577",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "8",
+    "left": "1260px",
+    "top": "2129px",
+    "zIndex": "749",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "9",
+    "left": "998px",
+    "top": "2301px",
+    "zIndex": "752",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "10",
+    "left": "1385px",
+    "top": "2479px",
+    "zIndex": "766",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "J",
+    "left": "1136px",
+    "top": "2661px",
+    "zIndex": "757",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "Q",
+    "left": "997px",
+    "top": "2837px",
+    "zIndex": "755",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "5",
+    "left": "989px",
+    "top": "2131px",
+    "zIndex": "751",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "1393px",
+    "top": "2128px",
+    "zIndex": "748",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "7",
+    "left": "1124px",
+    "top": "2133px",
+    "zIndex": "750",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "1396px",
+    "top": "2307px",
+    "zIndex": "767",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "1130px",
+    "top": "2311px",
+    "zIndex": "759",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "1262px",
+    "top": "2311px",
+    "zIndex": "760",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "999px",
+    "top": "2474px",
+    "zIndex": "753",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "Q",
+    "left": "1125px",
+    "top": "2476px",
+    "zIndex": "758",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "K",
+    "left": "1253px",
+    "top": "2484px",
+    "zIndex": "761",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "A",
+    "left": "994px",
+    "top": "2654px",
+    "zIndex": "754",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "2",
+    "left": "1260px",
+    "top": "2662px",
+    "zIndex": "762",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "3",
+    "left": "1385px",
+    "top": "2660px",
+    "zIndex": "765",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "5",
+    "left": "1263px",
+    "top": "2838px",
+    "zIndex": "763",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "1135px",
+    "top": "2838px",
+    "zIndex": "756",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "6",
+    "left": "1383px",
+    "top": "2836px",
+    "zIndex": "764",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "9",
+    "left": "434px",
+    "top": "1964px",
+    "zIndex": "588",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "9",
+    "left": "11px",
+    "top": "866px",
+    "zIndex": "781",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "10",
+    "left": "269px",
+    "top": "870px",
+    "zIndex": "822",
+    "flipped": false,
+    "selected": true
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "Q",
+    "left": "519px",
+    "top": "884px",
+    "zIndex": "784",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "J",
+    "left": "389px",
+    "top": "876px",
+    "zIndex": "783",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "6",
+    "left": "151px",
+    "top": "876px",
+    "zIndex": "821",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♦",
+    "rank": "3",
+    "left": "1123px",
+    "top": "884px",
+    "zIndex": "793",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♥",
+    "rank": "5",
+    "left": "1365px",
+    "top": "884px",
+    "zIndex": "790",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "8",
+    "left": "995px",
+    "top": "884px",
+    "zIndex": "792",
+    "flipped": false,
+    "selected": false
+  },
+  {
+    "cardType": "playingCard",
+    "suit": "♣",
+    "rank": "4",
+    "left": "1247px",
+    "top": "880px",
+    "zIndex": "795",
+    "flipped": false,
+    "selected": false
+  }
+]

@@ -15,13 +15,21 @@
         }
         .card-container {
             perspective: 1000px;
+            -webkit-touch-callout: none; /* iOS Safari */
+            touch-action: manipulation;  /* Prevent default touch actions */
         }
         .card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s;
+            transition: transform 0.6s, box-shadow 0.2s, border 0.2s;
             transform-style: preserve-3d;
+            border: 3px solid transparent;
+            border-radius: 0.5rem;
+        }
+        .selected .card-inner {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
         }
         .card-container.flipped .card-inner {
             transform: rotateY(180deg);
@@ -50,17 +58,16 @@
             width: 3000px;
             height: 3000px;
         }
-        #save-feedback {
+        #feedback-msg {
             transition: opacity 0.5s ease-in-out;
         }
-        /* ★★★ 個別削除ボタンのスタイル ★★★ */
         .delete-btn {
             position: absolute;
             top: -10px;
             right: -10px;
             width: 28px;
             height: 28px;
-            background-color: #ef4444; /* red-500 */
+            background-color: #ef4444;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -80,6 +87,11 @@
             opacity: 1;
             transform: scale(1);
         }
+        /* ★★★ モードボタンのアクティブスタイル ★★★ */
+        .mode-active {
+            background-color: #2563eb !important; /* blue-600 */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,9 +105,9 @@
             <div id="canvas" class="relative bg-green-800"></div>
             <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none">
                 <h1 class="font-bold text-xl">カード配置エリア</h1>
-                <p class="text-sm">・カードはダブルクリックで裏返せます。</p>
-                <p class="text-sm">・カードをドラッグして好きな場所に移動できます。</p>
-                <p class="text-sm">・カード右上の×ボタンで個別削除できます。</p>
+                <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
+                <p class="text-sm">・ドラッグ/スワイプで移動できます。</p>
+                <p class="text-sm">・「グループ選択モード」で複数選択できます。</p>
             </div>
         </main>
 
@@ -105,11 +117,21 @@
             <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
                 カードを追加
             </button>
+
+            <!-- ★★★ グループ選択モードボタンを追加 ★★★ -->
+            <button id="group-select-toggle-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                グループ選択: OFF
+            </button>
+            
             <div class="pt-4 border-t border-gray-300 space-y-2">
-                 <button id="save-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
-                    レイアウトを保存
+                 <button id="export-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    レイアウトをエクスポート
                 </button>
-                <p id="save-feedback" class="text-center text-green-700 font-semibold opacity-0 h-4"></p>
+                 <button id="import-layout-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    レイアウトをインポート
+                </button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+                <p id="feedback-msg" class="text-center text-green-700 font-semibold opacity-0 h-4"></p>
                 <button id="clear-layout-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                     全カードを削除
                 </button>
@@ -155,7 +177,7 @@
         </form>
     </dialog>
 
-    <!-- ★★★ 確認モーダルを追加 ★★★ -->
+    <!-- 確認モーダル -->
     <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm">
         <h3 class="text-lg font-bold text-gray-900 mb-4">確認</h3>
         <p id="confirm-message" class="text-gray-700 mb-6">本当に実行しますか？</p>
@@ -176,32 +198,31 @@
         const cardTypeRadios = document.querySelectorAll('input[name="cardType"]');
         const playingCardOptions = document.getElementById('playing-card-options');
         const colorCardOptions = document.getElementById('color-card-options');
-        const saveLayoutBtn = document.getElementById('save-layout-btn');
         const clearLayoutBtn = document.getElementById('clear-layout-btn');
-        const saveFeedback = document.getElementById('save-feedback');
-        
-        // ★★★ 確認モーダルの要素を取得 ★★★
+        const feedbackMsg = document.getElementById('feedback-msg');
         const confirmModal = document.getElementById('confirm-modal');
         const confirmMessage = document.getElementById('confirm-message');
         const confirmOkBtn = document.getElementById('confirm-ok-btn');
         const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const exportLayoutBtn = document.getElementById('export-layout-btn');
+        const importLayoutBtn = document.getElementById('import-layout-btn');
+        const importFileInput = document.getElementById('import-file-input');
+        // ★★★ モードボタンの要素を取得 ★★★
+        const groupSelectToggleBtn = document.getElementById('group-select-toggle-btn');
 
-        let activeCard = null;
         let zIndexCounter = 1;
         let confirmCallback = null;
-        const STORAGE_KEY = 'cardLayoutApp_v1';
+        const selectedCards = new Set();
+        // ★★★ モードの状態を管理する変数 ★★★
+        let isGroupSelectMode = false;
 
         board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
         board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
         
-        loadLayout();
-
         // --- イベントリスナー ---
         addCardBtn.addEventListener('click', () => modal.showModal());
         cancelBtn.addEventListener('click', () => modal.close());
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.close();
-        });
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
 
         cardTypeRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -223,37 +244,69 @@
             colorCardOptions.classList.add('hidden');
         });
 
-        saveLayoutBtn.addEventListener('click', saveLayout);
-        clearLayoutBtn.addEventListener('click', clearLayout);
+        clearLayoutBtn.addEventListener('click', () => {
+             showConfirm('本当にすべてのカードを削除しますか？', () => {
+                canvas.innerHTML = '';
+                zIndexCounter = 1;
+                clearSelection();
+            });
+        });
 
-        // ★★★ 確認モーダルのイベントリスナー ★★★
         confirmOkBtn.addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
             confirmModal.close();
-            confirmCallback = null;
         });
-        confirmCancelBtn.addEventListener('click', () => {
-            confirmModal.close();
-            confirmCallback = null;
-        });
-        confirmModal.addEventListener('click', (e) => {
-            if (e.target === confirmModal) {
-                confirmModal.close();
-                confirmCallback = null;
+        confirmCancelBtn.addEventListener('click', () => confirmModal.close());
+
+        exportLayoutBtn.addEventListener('click', exportLayout);
+        importLayoutBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', importLayout);
+        
+        // ★★★ 背景クリック時の選択解除はモードOFFの時のみ ★★★
+        board.addEventListener('mousedown', (e) => {
+            if (!isGroupSelectMode && (e.target === board || e.target === canvas)) {
+                clearSelection();
             }
         });
 
+        // ★★★ グループ選択モードの切り替え ★★★
+        groupSelectToggleBtn.addEventListener('click', () => {
+            isGroupSelectMode = !isGroupSelectMode;
+            groupSelectToggleBtn.classList.toggle('mode-active', isGroupSelectMode);
+            groupSelectToggleBtn.textContent = `グループ選択: ${isGroupSelectMode ? 'ON' : 'OFF'}`;
+            if (!isGroupSelectMode) {
+                clearSelection();
+            }
+        });
+
+
         // --- 関数定義 ---
 
-        /**
-         * ★★★ 確認モーダルを表示する関数 ★★★
-         * @param {string} message - 表示するメッセージ
-         * @param {function} onConfirm - 「はい」が押されたときに実行するコールバック関数
-         */
         function showConfirm(message, onConfirm) {
             confirmMessage.textContent = message;
             confirmCallback = onConfirm;
             confirmModal.showModal();
+        }
+        
+        function showFeedback(message) {
+            feedbackMsg.textContent = message;
+            feedbackMsg.style.opacity = 1;
+            setTimeout(() => { feedbackMsg.style.opacity = 0; }, 2500);
+        }
+
+        function clearSelection() {
+            selectedCards.forEach(card => card.classList.remove('selected'));
+            selectedCards.clear();
+        }
+
+        function toggleSelection(card) {
+            if (selectedCards.has(card)) {
+                selectedCards.delete(card);
+                card.classList.remove('selected');
+            } else {
+                selectedCards.add(card);
+                card.classList.add('selected');
+            }
         }
 
         function createCard(data) {
@@ -287,27 +340,36 @@
             }
             
             if (data.flipped) cardContainer.classList.add('flipped');
+            if (data.selected) toggleSelection(cardContainer);
             
             cardInner.appendChild(cardFront);
             cardInner.appendChild(cardBack);
             cardContainer.appendChild(cardInner);
 
-            // ★★★ 削除ボタンを作成して追加 ★★★
             const deleteBtn = document.createElement('div');
             deleteBtn.className = 'delete-btn';
             deleteBtn.innerHTML = '&times;';
             deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // ドラッグイベントの発火を防ぐ
-                showConfirm('このカードを削除しますか？', () => {
-                    cardContainer.remove();
-                });
+                e.stopPropagation();
+                showConfirm('このカードを削除しますか？', () => cardContainer.remove());
             });
             cardContainer.appendChild(deleteBtn);
-
             canvas.appendChild(cardContainer);
 
             makeDraggable(cardContainer);
+            
             cardContainer.addEventListener('dblclick', () => cardContainer.classList.toggle('flipped'));
+            let lastTap = 0;
+            cardContainer.addEventListener('touchend', () => {
+                if (cardContainer.didMove) return;
+                const currentTime = new Date().getTime();
+                if (currentTime - lastTap < 300) {
+                    cardContainer.classList.toggle('flipped');
+                }
+                lastTap = currentTime;
+            });
+            
+            cardContainer.addEventListener('contextmenu', e => e.preventDefault());
             
             if (parseInt(data.zIndex) >= zIndexCounter) {
                 zIndexCounter = parseInt(data.zIndex) + 1;
@@ -315,71 +377,149 @@
         }
         
         function makeDraggable(element) {
-            let offsetX, offsetY;
-            function onMouseDown(e) {
-                if (e.target.classList.contains('delete-btn')) return; // 削除ボタン上ではドラッグしない
-                e.preventDefault();
-                activeCard = element;
-                activeCard.classList.add('grabbing');
-                activeCard.style.zIndex = zIndexCounter++;
-                const rect = activeCard.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
+            let initialPositions = new Map();
+            let dragStartPos = null;
+            let didMove = false;
+
+            function onPointerDown(e) {
+                if (e.target.classList.contains('delete-btn')) return;
+                const isTouchEvent = e.type === 'touchstart';
+                if (!isTouchEvent) e.preventDefault();
+
+                element.didMove = false;
+                didMove = false;
+                const startX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+                const startY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+                dragStartPos = { x: startX, y: startY };
+
+                document.addEventListener(isTouchEvent ? 'touchmove' : 'mousemove', onPointerMove, { passive: false });
+                document.addEventListener(isTouchEvent ? 'touchend' : 'mouseup', onPointerUp);
             }
-            function onMouseMove(e) {
-                if (!activeCard) return;
-                const boardRect = board.getBoundingClientRect();
-                let x = e.clientX - boardRect.left - offsetX + board.scrollLeft;
-                let y = e.clientY - boardRect.top - offsetY + board.scrollTop;
-                x = Math.max(0, Math.min(x, canvas.clientWidth - activeCard.offsetWidth));
-                y = Math.max(0, Math.min(y, canvas.clientHeight - activeCard.offsetHeight));
-                activeCard.style.left = `${x}px`;
-                activeCard.style.top = `${y}px`;
+
+            function onPointerMove(e) {
+                if (dragStartPos === null) return;
+                const isTouchEvent = e.type === 'touchmove';
+                if (isTouchEvent) e.preventDefault();
+
+                const moveX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+                const moveY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+
+                if (!didMove && (Math.abs(moveX - dragStartPos.x) > 5 || Math.abs(moveY - dragStartPos.y) > 5)) {
+                    didMove = true;
+                    element.didMove = true;
+                    
+                    if (!selectedCards.has(element)) {
+                        // ★★★ モードOFFの時だけ選択をクリア ★★★
+                        if (!isGroupSelectMode) {
+                            clearSelection();
+                        }
+                        selectedCards.add(element);
+                        element.classList.add('selected');
+                    }
+
+                    initialPositions.clear();
+                    selectedCards.forEach(card => {
+                        card.classList.add('grabbing');
+                        card.style.zIndex = zIndexCounter++;
+                        initialPositions.set(card, { left: card.offsetLeft, top: card.offsetTop });
+                    });
+                }
+
+                if (didMove) {
+                    const deltaX = moveX - dragStartPos.x;
+                    const deltaY = moveY - dragStartPos.y;
+                    selectedCards.forEach(card => {
+                        const initialPos = initialPositions.get(card);
+                        if (initialPos) {
+                            let x = initialPos.left + deltaX;
+                            let y = initialPos.top + deltaY;
+                            x = Math.max(0, Math.min(x, canvas.clientWidth - card.offsetWidth));
+                            y = Math.max(0, Math.min(y, canvas.clientHeight - card.offsetHeight));
+                            card.style.left = `${x}px`;
+                            card.style.top = `${y}px`;
+                        }
+                    });
+                }
             }
-            function onMouseUp() {
-                if (activeCard) activeCard.classList.remove('grabbing');
-                activeCard = null;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
+
+            function onPointerUp(e) {
+                if (!didMove) {
+                    const isTouchEvent = e.type.startsWith('touch');
+                    // ★★★ モードによってクリック/タップ時の挙動を変更 ★★★
+                    if (isGroupSelectMode) {
+                        toggleSelection(element);
+                    } else {
+                        if (isTouchEvent || !e.shiftKey) {
+                            clearSelection();
+                        }
+                        toggleSelection(element);
+                    }
+                }
+
+                selectedCards.forEach(card => card.classList.remove('grabbing'));
+                dragStartPos = null;
+                initialPositions.clear();
+                
+                const isTouchEvent = e.type === 'touchend';
+                document.removeEventListener(isTouchEvent ? 'touchmove' : 'mousemove', onPointerMove);
+                document.removeEventListener(isTouchEvent ? 'touchend' : 'mouseup', onPointerUp);
             }
-            element.addEventListener('mousedown', onMouseDown);
+
+            element.addEventListener('mousedown', onPointerDown);
+            element.addEventListener('touchstart', onPointerDown, { passive: false });
         }
 
-        function saveLayout() {
+        function exportLayout() {
             const cards = Array.from(canvas.querySelectorAll('.card-container'));
+            if (cards.length === 0) {
+                showFeedback('エクスポートするカードがありません。');
+                return;
+            }
             const layoutData = cards.map(card => {
                 const cardData = { ...card.dataset };
                 cardData.left = card.style.left;
                 cardData.top = card.style.top;
                 cardData.zIndex = card.style.zIndex;
                 cardData.flipped = card.classList.contains('flipped');
+                cardData.selected = selectedCards.has(card);
                 return cardData;
             });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(layoutData));
-            saveFeedback.textContent = '保存しました！';
-            saveFeedback.style.opacity = 1;
-            setTimeout(() => { saveFeedback.style.opacity = 0; }, 2000);
+
+            const jsonString = JSON.stringify(layoutData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'card_layout.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showFeedback('レイアウトをエクスポートしました！');
         }
 
-        function loadLayout() {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                const layoutData = JSON.parse(savedData);
-                if (layoutData.length > 0) {
-                    layoutData.forEach(cardData => createCard(cardData));
+        function importLayout(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const layoutData = JSON.parse(e.target.result);
+                    if (!Array.isArray(layoutData)) throw new Error('無効なファイル形式です。');
+                    showConfirm('現在のレイアウトをクリアしてインポートしますか？', () => {
+                        canvas.innerHTML = '';
+                        clearSelection();
+                        zIndexCounter = 1;
+                        layoutData.forEach(cardData => createCard(cardData));
+                        showFeedback('レイアウトをインポートしました！');
+                    });
+                } catch (error) {
+                    alert('ファイルの読み込みに失敗しました。');
+                } finally {
+                    importFileInput.value = '';
                 }
-            }
-        }
-
-        function clearLayout() {
-            // ★★★ カスタム確認モーダルを使用 ★★★
-            showConfirm('本当にすべてのカードを削除しますか？\nこの操作は元に戻せません。', () => {
-                canvas.innerHTML = '';
-                localStorage.removeItem(STORAGE_KEY);
-                zIndexCounter = 1;
-            });
+            };
+            reader.readAsText(file);
         }
     });
 </script>
