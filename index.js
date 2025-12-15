@@ -1,4 +1,5 @@
 const { app, BrowserWindow, screen } = require('electron/main');
+require('update-electron-app')()
 
 const createWindow = () => {
   
