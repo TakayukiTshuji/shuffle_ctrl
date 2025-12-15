@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カード配置アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .grabbing {
+            cursor: grabbing;
+        }
+        .card-container {
+            perspective: 1000px;
+            -webkit-touch-callout: none; /* iOS Safari */
+            touch-action: manipulation;  /* Prevent default touch actions */
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s, box-shadow 0.2s, border 0.2s;
+            transform-style: preserve-3d;
+            border: 3px solid transparent;
+            border-radius: 0.5rem;
+        }
+        .selected .card-inner {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+        }
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-back {
+            background-color: #4A90E2;
+            color: white;
+            transform: rotateY(180deg);
+            border: 2px solid white;
+        }
+        dialog::backdrop {
+          background: rgba(0, 0, 0, 0.5);
+        }
+        #canvas {
+            width: 5000px;
+            height: 5000px;
+        }
+        #feedback-msg {
+            transition: opacity 0.5s ease-in-out;
+        }
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 28px;
+            height: 28px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            border: 2px solid white;
+            z-index: 10;
+            transform: scale(0.8);
+        }
+        .card-container:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .mode-active {
+            background-color: #2563eb !important; /* blue-600 */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen w-screen">
+        <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-auto">
+            <div id="canvas" class="relative bg-green-800"></div>
+            <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none">
+                <h1 class="font-bold text-xl">カード配置エリア</h1>
+                <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
+                <p class="text-sm">・ドラッグ/スワイプで移動できます。</p>
+                <p class="text-sm">・「グループ選択モード」で複数選択できます。</p>
+            </div>
+        </main>
+
+        <aside class="w-72 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
+            <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                カードを追加
+            </button>
+
+            <button id="group-select-toggle-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                グループ選択: OFF
+            </button>
+            
+            <div class="pt-4 border-t border-gray-300 space-y-2">
+                 <button id="export-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    レイアウトをエクスポート
+                </button>
+                 <button id="import-layout-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    レイアウトをインポート
+                </button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+                <p id="feedback-msg" class="text-center text-green-700 font-semibold opacity-0 h-4"></p>
+                <button id="delete-selected-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    選択したカードを削除
+                </button>
+                <button id="clear-layout-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    全カードを削除
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <dialog id="add-card-modal" class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <form id="add-card-form">
+            <h3 class="text-2xl font-bold mb-6 text-gray-800">新しいカードを作成</h3>
+            <fieldset class="mb-4">
+                <legend class="font-semibold mb-2 text-gray-700">カードの種類</legend>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2"><input type="radio" name="cardType" value="playingCard" checked class="form-radio h-5 w-5 text-blue-600"><span class="text-gray-700">トランプ</span></label>
+                    <label class="flex items-center space-x-2"><input type="radio" name="cardType" value="colorCard" class="form-radio h-5 w-5 text-blue-600"><span class="text-gray-700">色カード</span></label>
+                </div>
+            </fieldset>
+            <fieldset id="playing-card-options" class="space-y-4">
+                <div>
+                    <label for="suit" class="block font-semibold mb-1 text-gray-700">スート (マーク)</label>
+                    <select id="suit" name="suit" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="♠">スペード (♠)</option><option value="♥">ハート (♥)</option><option value="♦">ダイヤ (♦)</option><option value="♣">クラブ (♣)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="card-count" class="block font-semibold mb-1 text-gray-700">作製枚数</label>
+                    <input type="number" id="card-count" name="cardCount" value="1" min="1" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </fieldset>
+            <fieldset id="color-card-options" class="hidden">
+                <div>
+                    <label for="color" class="block font-semibold mb-1 text-gray-700">色を選択</label>
+                    <input type="color" id="color" name="color" value="#ff0000" class="w-full h-12 p-1 border border-gray-300 rounded-md cursor-pointer">
+                </div>
+            </fieldset>
+            <div class="mt-8 flex justify-end space-x-4">
+                <button type="button" id="cancel-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">キャンセル</button>
+                <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-semibold">作成</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">確認</h3>
+        <p id="confirm-message" class="text-gray-700 mb-6">本当に実行しますか？</p>
+        <div class="flex justify-end space-x-4">
+            <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">いいえ</button>
+            <button id="confirm-ok-btn" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">はい</button>
+        </div>
+    </dialog>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const board = document.getElementById('board');
+        const canvas = document.getElementById('canvas');
+        const addCardBtn = document.getElementById('add-card-btn');
+        const modal = document.getElementById('add-card-modal');
+        const addCardForm = document.getElementById('add-card-form');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const cardTypeRadios = document.querySelectorAll('input[name="cardType"]');
+        const playingCardOptions = document.getElementById('playing-card-options');
+        const colorCardOptions = document.getElementById('color-card-options');
+        const clearLayoutBtn = document.getElementById('clear-layout-btn');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmOkBtn = document.getElementById('confirm-ok-btn');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+        const exportLayoutBtn = document.getElementById('export-layout-btn');
+        const importLayoutBtn = document.getElementById('import-layout-btn');
+        const importFileInput = document.getElementById('import-file-input');
+        const groupSelectToggleBtn = document.getElementById('group-select-toggle-btn');
+        const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+        let zIndexCounter = 1;
+        let confirmCallback = null;
+        const selectedCards = new Set();
+        let isGroupSelectMode = false;
+
+        board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
+        board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
+        
+        // --- イベントリスナー ---
+        addCardBtn.addEventListener('click', () => modal.showModal());
+        cancelBtn.addEventListener('click', () => modal.close());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+        cardTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                playingCardOptions.classList.toggle('hidden', e.target.value !== 'playingCard');
+                colorCardOptions.classList.toggle('hidden', e.target.value !== 'colorCard');
+            });
+        });
+
+        addCardForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(addCardForm);
+            const cardData = Object.fromEntries(formData.entries());
+            const count = parseInt(cardData.cardCount) || 1;
+
+            for (let i = 0; i < count; i++) {
+                const singleCardData = { ...cardData };
+                const offsetX = (i % 5) * 20 - 40;
+                const offsetY = Math.floor(i / 5) * 20 - 20;
+
+                singleCardData.left = `${board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX}px`;
+                singleCardData.top = `${board.scrollTop + (board.clientHeight / 2) - 80 + offsetY}px`;
+                singleCardData.zIndex = zIndexCounter++;
+                createCard(singleCardData);
+            }
+            
+            modal.close();
+            addCardForm.reset();
+            document.getElementById('card-count').value = '1';
+            playingCardOptions.classList.remove('hidden');
+            colorCardOptions.classList.add('hidden');
+        });
+
+        clearLayoutBtn.addEventListener('click', () => {
+             showConfirm('本当にすべてのカードを削除しますか？', () => {
+                canvas.innerHTML = '';
+                zIndexCounter = 1;
+                clearSelection();
+            });
+        });
+
+        deleteSelectedBtn.addEventListener('click', () => {
+            if (selectedCards.size === 0) {
+                showFeedback('削除するカードが選択されていません。');
+                return;
+            }
+
+            showConfirm(`選択した${selectedCards.size}枚のカードを本当に削除しますか？`, () => {
+                selectedCards.forEach(card => {
+                    card.remove();
+                });
+                clearSelection();
+                showFeedback('選択したカードを削除しました。');
+            });
+        });
+
+        confirmOkBtn.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            confirmModal.close();
+        });
+        confirmCancelBtn.addEventListener('click', () => confirmModal.close());
+
+        exportLayoutBtn.addEventListener('click', exportLayout);
+        importLayoutBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', importLayout);
+        
+        board.addEventListener('mousedown', (e) => {
+            if (!isGroupSelectMode && (e.target === board || e.target === canvas)) {
+                clearSelection();
+            }
+        });
+
+        groupSelectToggleBtn.addEventListener('click', () => {
+            isGroupSelectMode = !isGroupSelectMode;
+            groupSelectToggleBtn.classList.toggle('mode-active', isGroupSelectMode);
+            groupSelectToggleBtn.textContent = `グループ選択: ${isGroupSelectMode ? 'ON' : 'OFF'}`;
+            if (!isGroupSelectMode) {
+                clearSelection();
+            }
+        });
+
+
+        // --- 関数定義 ---
+        function showConfirm(message, onConfirm) {
+            confirmMessage.textContent = message;
+            confirmCallback = onConfirm;
+            confirmModal.showModal();
+        }
+        
+        function showFeedback(message) {
+            feedbackMsg.textContent = message;
+            feedbackMsg.style.opacity = 1;
+            setTimeout(() => { feedbackMsg.style.opacity = 0; }, 2500);
+        }
+
+        function clearSelection() {
+            selectedCards.forEach(card => card.classList.remove('selected'));
+            selectedCards.clear();
+        }
+
+        function toggleSelection(card) {
+            if (selectedCards.has(card)) {
+                selectedCards.delete(card);
+                card.classList.remove('selected');
+            } else {
+                selectedCards.add(card);
+                card.classList.add('selected');
+            }
+        }
+
+        function createCard(data) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container absolute w-28 h-40 cursor-grab select-none';
+            cardContainer.style.left = data.left;
+            cardContainer.style.top = data.top;
+            cardContainer.style.zIndex = data.zIndex;
+            cardContainer.dataset.cardType = data.cardType;
+
+            const cardInner = document.createElement('div');
+            cardInner.className = 'card-inner';
+
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front bg-white shadow-lg border-2 border-gray-300';
+            
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back text-5xl font-bold';
+            cardBack.textContent = '?';
+
+            if (data.cardType === 'playingCard') {
+                const { suit } = data;
+                cardContainer.dataset.suit = suit;
+                const color = (suit === '♥' || suit === '♦') ? 'text-red-600' : 'text-black';
+                // ▼▼▼ 変更箇所 (text-8xl -> text-7xl) ▼▼▼
+                cardFront.innerHTML = `<div class="w-full h-full flex items-center justify-center text-7xl font-bold ${color}">${suit}</div>`;
+                // ▲▲▲ 変更箇所 ▲▲▲
+            } else {
+                cardContainer.dataset.color = data.color;
+                cardFront.style.backgroundColor = data.color;
+                cardFront.style.border = '2px solid rgba(0,0,0,0.2)';
+            }
+            
+            if (data.flipped) cardContainer.classList.add('flipped');
+            if (data.selected) toggleSelection(cardContainer);
+            
+            cardInner.appendChild(cardFront);
+            cardInner.appendChild(cardBack);
+            cardContainer.appendChild(cardInner);
+
+            const deleteBtn = document.createElement('div');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showConfirm('このカードを削除しますか？', () => cardContainer.remove());
+            });
+            cardContainer.appendChild(deleteBtn);
+canvas.appendChild(cardContainer);
+
+            makeDraggable(cardContainer);
+            
+            cardContainer.addEventListener('dblclick', () => cardContainer.classList.toggle('flipped'));
+            let lastTap = 0;
+            cardContainer.addEventListener('touchend', () => {
+                if (cardContainer.didMove) return;
+                const currentTime = new Date().getTime();
+                if (currentTime - lastTap < 300) {
+                    cardContainer.classList.toggle('flipped');
+                }
+                lastTap = currentTime;
+            });
+            
+            cardContainer.addEventListener('contextmenu', e => e.preventDefault());
+            
+            if (parseInt(data.zIndex) >= zIndexCounter) {
+                zIndexCounter = parseInt(data.zIndex) + 1;
+            }
+        }
+        
+        function makeDraggable(element) {
+            let initialPositions = new Map();
+            let dragStartPos = null;
+            let didMove = false;
+
+            function onPointerDown(e) {
+                if (e.target.classList.contains('delete-btn')) return;
+                const isTouchEvent = e.type === 'touchstart';
+                if (!isTouchEvent) e.preventDefault();
+
+                element.didMove = false;
+                didMove = false;
+                const startX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+                const startY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+                dragStartPos = { x: startX, y: startY };
+
+                document.addEventListener(isTouchEvent ? 'touchmove' : 'mousemove', onPointerMove, { passive: false });
+                document.addEventListener(isTouchEvent ? 'touchend' : 'mouseup', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                if (dragStartPos === null) return;
+                const isTouchEvent = e.type === 'touchmove';
+                if (isTouchEvent) e.preventDefault();
+
+                const moveX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+                const moveY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+
+                if (!didMove && (Math.abs(moveX - dragStartPos.x) > 5 || Math.abs(moveY - dragStartPos.y) > 5)) {
+                    didMove = true;
+                    element.didMove = true;
+                    
+                    if (!selectedCards.has(element)) {
+                        if (!isGroupSelectMode) {
+                            clearSelection();
+                        }
+                        selectedCards.add(element);
+                        element.classList.add('selected');
+                    }
+
+                    initialPositions.clear();
+                    selectedCards.forEach(card => {
+                        card.classList.add('grabbing');
+                        card.style.zIndex = zIndexCounter++;
+                        initialPositions.set(card, { left: card.offsetLeft, top: card.offsetTop });
+                    });
+                }
+
+                if (didMove) {
+                    const deltaX = moveX - dragStartPos.x;
+                    const deltaY = moveY - dragStartPos.y;
+                    selectedCards.forEach(card => {
+                        const initialPos = initialPositions.get(card);
+                        if (initialPos) {
+                            let x = initialPos.left + deltaX;
+                            let y = initialPos.top + deltaY;
+                            x = Math.max(0, Math.min(x, canvas.clientWidth - card.offsetWidth));
+                            y = Math.max(0, Math.min(y, canvas.clientHeight - card.offsetHeight));
+                            card.style.left = `${x}px`;
+                            card.style.top = `${y}px`;
+                        }
+                    });
+                }
+            }
+
+            function onPointerUp(e) {
+                if (!didMove) {
+                    const isTouchEvent = e.type.startsWith('touch');
+                    if (isGroupSelectMode) {
+                        toggleSelection(element);
+                    } else {
+                        if (isTouchEvent || !e.shiftKey) {
+                            clearSelection();
+                        }
+                        toggleSelection(element);
+                    }
+                }
+
+                selectedCards.forEach(card => card.classList.remove('grabbing'));
+                dragStartPos = null;
+                initialPositions.clear();
+                
+                const isTouchEvent = e.type === 'touchend';
+                document.removeEventListener(isTouchEvent ? 'touchmove' : 'mousemove', onPointerMove);
+                document.removeEventListener(isTouchEvent ? 'touchend' : 'mouseup', onPointerUp);
+            }
+
+            element.addEventListener('mousedown', onPointerDown);
+            element.addEventListener('touchstart', onPointerDown, { passive: false });
+        }
+
+        function exportLayout() {
+            const cards = Array.from(canvas.querySelectorAll('.card-container'));
+            if (cards.length === 0) {
+                showFeedback('エクスポートするカードがありません。');
+                return;
+            }
+            const layoutData = cards.map(card => {
+                const cardData = { ...card.dataset };
+                cardData.left = card.style.left;
+                cardData.top = card.style.top;
+                cardData.zIndex = card.style.zIndex;
+                cardData.flipped = card.classList.contains('flipped');
+                cardData.selected = selectedCards.has(card);
+                return cardData;
+            });
+
+            const jsonString = JSON.stringify(layoutData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'card_layout.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showFeedback('レイアウトをエクスポートしました！');
+        }
+
+        function importLayout(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const layoutData = JSON.parse(e.target.result);
+                    if (!Array.isArray(layoutData)) throw new Error('無効なファイル形式です。');
+                    showConfirm('現在のレイアウトをクリアしてインポートしますか？', () => {
+                        canvas.innerHTML = '';
+                        clearSelection();
+                        zIndexCounter = 1;
+                        layoutData.forEach(cardData => createCard(cardData));
+                        showFeedback('レイアウトをインポートしました！');
+                    });
+                } catch (error) {
+                    alert('ファイルの読み込みに失敗しました。');
+                } finally {
+                    importFileInput.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+    });
+</script>
+
+</body>
+</html>
