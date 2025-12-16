@@ -1,5 +1,11 @@
-const { app, BrowserWindow, screen } = require('electron/main');
-require('update-electron-app')()
+const { app, BrowserWindow, screen, Menu } = require('electron/main');
+
+try {
+  const updateElectronApp = require('update-electron-app')();
+  updateElectronApp();
+} catch (error) {
+  console.log('Auto-update not available: ', error.message);
+}
 
 const createWindow = () => {
   
@@ -15,6 +21,7 @@ const createWindow = () => {
 
   win.loadFile('index.html');
 };
+Menu.setApplicationMenu(null);
 
 app.whenReady().then(() => {
   createWindow();

@@ -9,6 +9,10 @@
     "make": "electron-forge make",
     "publish": "dotenv -e .env electron-forge publish"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TakayukiTshuji/shuffle_ctrl"
+  },
   "keywords": [],
   "author": "TakayukiTsuji",
   "license": "ISC",
@@ -24,10 +28,10 @@
     "@electron-forge/publisher-github": "^7.10.2",
     "@electron/fuses": "^1.8.0",
     "dotenv-cli": "^11.0.0",
-    "electron": "^39.2.7"
+    "electron": "^39.2.7",
+    "update-electron-app": "^2.0.1"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1",
-    "update-electron-app": "^3.1.2"
+    "electron-squirrel-startup": "^1.0.1"
   }
 }
