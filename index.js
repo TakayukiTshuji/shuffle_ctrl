@@ -1,5 +1,6 @@
 const { app, BrowserWindow, screen, Menu } = require('electron/main');
 const path = require('path');
+//const { spawn } = require('child_process');
 
 try {
   const updateElectronApp = require('update-electron-app');
@@ -18,6 +19,7 @@ const createWindow = () => {
     icon: path.join(__dirname, './img/playingcard.ico'),
     webPreferences: {
       nodeIntegration: true,
+      zoomFactor: 0.45,
     },
   });
 
