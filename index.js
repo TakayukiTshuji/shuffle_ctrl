@@ -2,7 +2,7 @@ const { app, BrowserWindow, screen, Menu } = require('electron/main');
 const path = require('path');
 
 try {
-  const updateElectronApp = require('update-electron-app')();
+  const updateElectronApp = require('update-electron-app');
   updateElectronApp();
 } catch (error) {
   console.log('Auto-update not available: ', error.message);
