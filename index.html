@@ -17,6 +17,10 @@
             perspective: 1000px;
             -webkit-touch-callout: none; /* iOS Safari */
             touch-action: manipulation;  /* Prevent default touch actions */
+            transition: left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .card-container.grabbing {
+            transition: none;
         }
         .card-inner {
             position: relative;
@@ -57,6 +61,13 @@
         #canvas {
             width: 5000px;
             height: 5000px;
+            background-size: 120px 170px;
+            background-position: -60px -85px;
+        }
+        .show-grid {
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.1) 4px, transparent 5px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 4px, transparent 5px);
         }
         #feedback-msg {
             transition: opacity 0.5s ease-in-out;
@@ -99,9 +110,10 @@
 <body class="bg-gray-100">
 
     <div class="flex h-screen w-screen">
+        <!-- 左側のカード配置エリア -->
         <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-auto">
             <div id="canvas" class="relative bg-green-800"></div>
-            <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none">
+            <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none" style="z-index: 100;">
                 <h1 class="font-bold text-xl">カード配置エリア</h1>
                 <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
                 <p class="text-sm">・ドラッグ/スワイプで移動できます。</p>
@@ -109,8 +121,29 @@
             </div>
         </main>
 
-        <aside class="w-72 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4">
+        <!-- 右側のコントロールパネル -->
+        <aside class="w-72 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
+            
+            <!-- ★★★ ステータスパネル (枚数・カウンター) ★★★ -->
+            <div class="bg-white p-3 rounded-lg shadow space-y-2 text-sm text-gray-700">
+                <div class="flex justify-between border-b pb-1">
+                    <span>総カード枚数:</span>
+                    <span id="total-count" class="font-bold text-lg">0</span>
+                </div>
+                <div class="flex justify-between border-b pb-1">
+                    <span>選択中:</span>
+                    <span id="selected-count" class="font-bold text-lg text-blue-600">0</span>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                    <span>シャッフル回数:</span>
+                    <div class="flex items-center space-x-2">
+                        <span id="shuffle-count" class="font-bold text-lg text-indigo-600">0</span>
+                        <button id="reset-shuffle-count-btn" class="text-xs bg-gray-300 hover:bg-gray-400 px-2 py-1 rounded">リセット</button>
+                    </div>
+                </div>
+            </div>
+
             <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
                 カードを追加
             </button>
@@ -118,8 +151,32 @@
             <button id="group-select-toggle-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                 グループ選択: OFF
             </button>
+
+            <!-- グリッド設定 -->
+            <div class="bg-gray-300 p-3 rounded-lg space-y-2">
+                <h3 class="font-bold text-gray-700">グリッド設定</h3>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="snap-to-grid-check" class="form-checkbox h-5 w-5 text-blue-600">
+                    <span class="text-gray-800 font-semibold">マス目にスナップ</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="show-grid-check" class="form-checkbox h-5 w-5 text-blue-600">
+                    <span class="text-gray-800 font-semibold">マス目を表示</span>
+                </label>
+            </div>
             
             <div class="pt-4 border-t border-gray-300 space-y-2">
+                <div class="bg-indigo-100 p-2 rounded-lg mb-2">
+                    <div class="flex flex-col space-y-2 mb-2">
+                        <button id="random-cut-Horizon-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm">
+                            ランダムカット(横)
+                        </button>
+                        <button id="random-cut-Vertical-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm">
+                            ランダムカット(縦)
+                        </button>
+                    </div>
+                </div>
+                
                  <button id="export-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                     レイアウトをエクスポート
                 </button>
@@ -138,6 +195,7 @@
         </aside>
     </div>
 
+    <!-- カード追加モーダル -->
     <dialog id="add-card-modal" class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-md">
         <form id="add-card-form">
             <h3 class="text-2xl font-bold mb-6 text-gray-800">新しいカードを作成</h3>
@@ -173,6 +231,7 @@
         </form>
     </dialog>
 
+    <!-- 確認モーダル -->
     <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm">
         <h3 class="text-lg font-bold text-gray-900 mb-4">確認</h3>
         <p id="confirm-message" class="text-gray-700 mb-6">本当に実行しますか？</p>
@@ -204,11 +263,26 @@
         const importFileInput = document.getElementById('import-file-input');
         const groupSelectToggleBtn = document.getElementById('group-select-toggle-btn');
         const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+        const randomCutHorizonBtn = document.getElementById('random-cut-Horizon-btn');
+        const randomCutVerticalBtn = document.getElementById('random-cut-Vertical-btn');
+        
+        const snapToGridCheck = document.getElementById('snap-to-grid-check');
+        const showGridCheck = document.getElementById('show-grid-check');
+
+        // ★★★ カウンター要素の取得 ★★★
+        const totalCountEl = document.getElementById('total-count');
+        const selectedCountEl = document.getElementById('selected-count');
+        const shuffleCountEl = document.getElementById('shuffle-count');
+        const resetShuffleBtn = document.getElementById('reset-shuffle-count-btn');
 
         let zIndexCounter = 1;
         let confirmCallback = null;
         const selectedCards = new Set();
         let isGroupSelectMode = false;
+        let shuffleCounter = 0; // シャッフル回数
+        
+        const GRID_WIDTH = 120;
+        const GRID_HEIGHT = 170;
 
         board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
         board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
@@ -224,6 +298,16 @@
                 colorCardOptions.classList.toggle('hidden', e.target.value !== 'colorCard');
             });
         });
+        
+        showGridCheck.addEventListener('change', (e) => {
+            canvas.classList.toggle('show-grid', e.target.checked);
+        });
+
+        // ★★★ シャッフル回数リセット ★★★
+        resetShuffleBtn.addEventListener('click', () => {
+            shuffleCounter = 0;
+            updateStatus();
+        });
 
         addCardForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -236,12 +320,21 @@
                 const offsetX = (i % 5) * 20 - 40;
                 const offsetY = Math.floor(i / 5) * 20 - 20;
 
-                singleCardData.left = `${board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX}px`;
-                singleCardData.top = `${board.scrollTop + (board.clientHeight / 2) - 80 + offsetY}px`;
+                let left = board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX;
+                let top = board.scrollTop + (board.clientHeight / 2) - 80 + offsetY;
+                
+                if (snapToGridCheck.checked) {
+                    left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
+                    top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                }
+
+                singleCardData.left = `${left}px`;
+                singleCardData.top = `${top}px`;
                 singleCardData.zIndex = zIndexCounter++;
                 createCard(singleCardData);
             }
             
+            updateStatus(); // ★★★ 更新
             modal.close();
             addCardForm.reset();
             document.getElementById('card-count').value = '1';
@@ -254,6 +347,7 @@
                 canvas.innerHTML = '';
                 zIndexCounter = 1;
                 clearSelection();
+                updateStatus(); // ★★★ 更新
             });
         });
 
@@ -269,8 +363,102 @@
                 });
                 clearSelection();
                 showFeedback('選択したカードを削除しました。');
+                updateStatus(); // ★★★ 更新
             });
         });
+
+        randomCutHorizonBtn.addEventListener('click', () => {
+            if (selectedCards.size < 2) {
+                showFeedback('ランダムカットするには2枚以上選択してください。');
+                return;
+            }
+
+            const cardsArray = Array.from(selectedCards);
+
+            // 座標に基づいてソート（左上から右下へ）
+            cardsArray.sort((a, b) => {
+                const ay = parseInt(a.style.top || 0);
+                const by = parseInt(b.style.top || 0);
+                // 多少のズレは同じ行とみなす
+                if (Math.abs(ay - by) > GRID_HEIGHT / 2) {
+                    return ay - by;
+                }
+                const ax = parseInt(a.style.left || 0);
+                const bx = parseInt(b.style.left || 0);
+                return ax - bx;
+            });
+
+            // 各カードの位置を記録
+            const positions = cardsArray.map(card => ({
+                left: card.style.left,
+                top: card.style.top
+            }));
+
+            const n = cardsArray.length;
+            
+            // ★★★ 修正: 1枚だけ右に移動（右シフト量1固定） ★★★
+            const shift = 1;
+
+            // 各カードを新しい位置に移動（右シフト）
+            cardsArray.forEach((card, index) => {
+                // 右シフト: index のカードを (index + shift) % n の位置へ
+                const newPosIndex = (index + shift) % n;
+                
+                card.style.left = positions[newPosIndex].left;
+                card.style.top = positions[newPosIndex].top;
+                card.style.zIndex = zIndexCounter++;
+            });
+
+            showFeedback('1枚右に移動しました');
+        });
+
+        randomCutVerticalBtn.addEventListener('click', () => {
+            if (selectedCards.size < 2) {
+                showFeedback('ランダムカットするには2枚以上選択してください。');
+                return;
+            }
+
+            const cardsArray = Array.from(selectedCards);
+
+            // 縦方向: 同じ列（X座標が近い）のカードをグループ化
+            const columns = new Map();
+            cardsArray.forEach(card => {
+                const x = parseInt(card.style.left || 0);
+                const colKey = Math.round(x / GRID_WIDTH);
+                if (!columns.has(colKey)) {
+                    columns.set(colKey, []);
+                }
+                columns.get(colKey).push(card);
+            });
+
+            // 各列ごとに縦方向カット（1枚下移動）
+            columns.forEach(colCards => {
+                if (colCards.length < 2) return;
+                
+                // Y座標でソート
+                colCards.sort((a, b) => {
+                    return parseInt(a.style.top || 0) - parseInt(b.style.top || 0);
+                });
+
+                const positions = colCards.map(card => ({
+                    left: card.style.left,
+                    top: card.style.top
+                }));
+
+                const n = colCards.length;
+                const shift = 1; // 1枚下移動
+
+                colCards.forEach((card, index) => {
+                    const newPosIndex = (index + shift) % n;
+                    card.style.left = positions[newPosIndex].left;
+                    card.style.top = positions[newPosIndex].top;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+
+            showFeedback('縦方向に1枚下移動しました');
+        });
+
 
         confirmOkBtn.addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
@@ -299,6 +487,21 @@
 
 
         // --- 関数定義 ---
+        
+        // ★★★ ステータス更新関数 ★★★
+        function updateStatus() {
+            const cards = canvas.querySelectorAll('.card-container');
+            totalCountEl.textContent = cards.length;
+            selectedCountEl.textContent = selectedCards.size;
+            shuffleCountEl.textContent = shuffleCounter;
+        }
+
+        // ★★★ シャッフル回数インクリメント ★★★
+        function incrementShuffleCount() {
+            shuffleCounter++;
+            updateStatus();
+        }
+
         function showConfirm(message, onConfirm) {
             confirmMessage.textContent = message;
             confirmCallback = onConfirm;
@@ -314,6 +517,7 @@
         function clearSelection() {
             selectedCards.forEach(card => card.classList.remove('selected'));
             selectedCards.clear();
+            updateStatus(); // ★★★ 更新
         }
 
         function toggleSelection(card) {
@@ -324,6 +528,7 @@
                 selectedCards.add(card);
                 card.classList.add('selected');
             }
+            updateStatus(); // ★★★ 更新
         }
 
         function createCard(data) {
@@ -348,9 +553,7 @@
                 const { suit } = data;
                 cardContainer.dataset.suit = suit;
                 const color = (suit === '♥' || suit === '♦') ? 'text-red-600' : 'text-black';
-                // ▼▼▼ 変更箇所 (text-8xl -> text-7xl) ▼▼▼
                 cardFront.innerHTML = `<div class="w-full h-full flex items-center justify-center text-7xl font-bold ${color}">${suit}</div>`;
-                // ▲▲▲ 変更箇所 ▲▲▲
             } else {
                 cardContainer.dataset.color = data.color;
                 cardFront.style.backgroundColor = data.color;
@@ -358,7 +561,7 @@
             }
             
             if (data.flipped) cardContainer.classList.add('flipped');
-            if (data.selected) toggleSelection(cardContainer);
+            if (data.selected) toggleSelection(cardContainer); // ここでupdateStatusが呼ばれるが、ループ中のため負荷が気になる場合は調整
             
             cardInner.appendChild(cardFront);
             cardInner.appendChild(cardBack);
@@ -369,10 +572,16 @@
             deleteBtn.innerHTML = '&times;';
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                showConfirm('このカードを削除しますか？', () => cardContainer.remove());
+                showConfirm('このカードを削除しますか？', () => {
+                    cardContainer.remove();
+                    if(selectedCards.has(cardContainer)) {
+                        selectedCards.delete(cardContainer);
+                    }
+                    updateStatus(); // ★★★ 更新
+                });
             });
             cardContainer.appendChild(deleteBtn);
-canvas.appendChild(cardContainer);
+            canvas.appendChild(cardContainer);
 
             makeDraggable(cardContainer);
             
@@ -432,6 +641,7 @@ canvas.appendChild(cardContainer);
                         }
                         selectedCards.add(element);
                         element.classList.add('selected');
+                        updateStatus(); // ★★★ 更新
                     }
 
                     initialPositions.clear();
@@ -450,8 +660,10 @@ canvas.appendChild(cardContainer);
                         if (initialPos) {
                             let x = initialPos.left + deltaX;
                             let y = initialPos.top + deltaY;
+                            
                             x = Math.max(0, Math.min(x, canvas.clientWidth - card.offsetWidth));
                             y = Math.max(0, Math.min(y, canvas.clientHeight - card.offsetHeight));
+                            
                             card.style.left = `${x}px`;
                             card.style.top = `${y}px`;
                         }
@@ -469,6 +681,22 @@ canvas.appendChild(cardContainer);
                             clearSelection();
                         }
                         toggleSelection(element);
+                    }
+                } else {
+                    if (snapToGridCheck.checked) {
+                        selectedCards.forEach(card => {
+                            let currentLeft = parseInt(card.style.left || 0);
+                            let currentTop = parseInt(card.style.top || 0);
+
+                            let snapLeft = Math.round(currentLeft / GRID_WIDTH) * GRID_WIDTH;
+                            let snapTop = Math.round(currentTop / GRID_HEIGHT) * GRID_HEIGHT;
+
+                            snapLeft = Math.max(0, Math.min(snapLeft, canvas.clientWidth - card.offsetWidth));
+                            snapTop = Math.max(0, Math.min(snapTop, canvas.clientHeight - card.offsetHeight));
+
+                            card.style.left = `${snapLeft}px`;
+                            card.style.top = `${snapTop}px`;
+                        });
                     }
                 }
 
@@ -527,6 +755,7 @@ canvas.appendChild(cardContainer);
                         clearSelection();
                         zIndexCounter = 1;
                         layoutData.forEach(cardData => createCard(cardData));
+                        updateStatus(); // ★★★ 更新
                         showFeedback('レイアウトをインポートしました！');
                     });
                 } catch (error) {
@@ -537,8 +766,13 @@ canvas.appendChild(cardContainer);
             };
             reader.readAsText(file);
         }
+        
+        // 初期状態更新
+        updateStatus();
     });
 </script>
 
 </body>
 </html>
+```
+```eof
