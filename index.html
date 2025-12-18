@@ -122,7 +122,7 @@
         </main>
 
         <!-- 右側のコントロールパネル -->
-        <aside class="w-81 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto">
+        <aside class="w-81 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto" style="zoom: 130%;">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
             
             <!-- ★★★ ステータスパネル (枚数・カウンター) ★★★ -->
@@ -142,6 +142,16 @@
                         <button id="reset-shuffle-count-btn" class="text-xs bg-gray-300 hover:bg-gray-400 px-2 py-1 rounded">リセット</button>
                     </div>
                 </div>
+            </div>
+
+            <div class="bg-teal-100 p-3 rounded-lg space-y-2">
+                <h3 class="font-bold text-teal-800 text-sm">テンプレートから追加</h3>
+                <select id="template-select" class="w-full p-2 border border-teal-300 rounded text-sm bg-white">
+                    <option value="adj_graph_g">隣接コミットメント (グラフG)</option>
+                </select>
+                <button id="apply-template-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded shadow text-sm">
+                    配置
+                </button>
             </div>
 
             <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
@@ -176,6 +186,18 @@
                         </button>
                     </div>
                 </div>
+
+                <div class="bg-pink-100 p-2 rounded-lg mb-2">
+                    <h3 class="text-xs font-bold text-pink-800 mb-1 ml-1">束シャッフル (Scramble)</h3>
+                    <div class="flex flex-col space-y-2 mb-2">
+                        <button id="pile-scramble-col-btn" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm">
+                            垂直パイルスクランブル
+                        </button>
+                        <button id="pile-scramble-row-btn" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg shadow-md text-sm">
+                            水平パイルスクランブル
+                        </button>
+                    </div>
+                </div>
                 
                  <button id="export-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                     レイアウトをエクスポート
@@ -196,7 +218,7 @@
     </div>
 
     <!-- カード追加モーダル -->
-    <dialog id="add-card-modal" class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-md">
+    <dialog id="add-card-modal" class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-xl" style="zoom: 150%;">
         <form id="add-card-form">
             <h3 class="text-2xl font-bold mb-6 text-gray-800">新しいカードを作成</h3>
             <fieldset class="mb-4">
@@ -224,6 +246,19 @@
                     <input type="color" id="color" name="color" value="#ff0000" class="w-full h-12 p-1 border border-gray-300 rounded-md cursor-pointer">
                 </div>
             </fieldset>
+
+            <!-- ★★★ 共通設定エリア（枚数・行列設定） ★★★ -->
+            <div class="mt-4 p-4 bg-gray-100 rounded-md">
+                <label for="card-count" class="block font-semibold mb-1 text-gray-700">作製枚数 (N)</label>
+                <input type="number" id="card-count" name="cardCount" value="1" min="1" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2">
+                
+                <label class="flex items-center space-x-2 cursor-pointer mt-2">
+                    <input type="checkbox" id="create-as-matrix" name="createAsMatrix" class="form-checkbox h-5 w-5 text-blue-600">
+                    <span class="text-gray-700 font-semibold">N × N (行列) で配置</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1">※チェックを入れると、N行N列の合計N²枚が作成されます。</p>
+            </div>
+
             <div class="mt-8 flex justify-end space-x-4">
                 <button type="button" id="cancel-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">キャンセル</button>
                 <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-semibold">作成</button>
@@ -265,9 +300,18 @@
         const deleteSelectedBtn = document.getElementById('delete-selected-btn');
         const randomCutHorizonBtn = document.getElementById('random-cut-Horizon-btn');
         const randomCutVerticalBtn = document.getElementById('random-cut-Vertical-btn');
+        const pileScrambleColBtn = document.getElementById('pile-scramble-col-btn');
+        const pileScrambleRowBtn = document.getElementById('pile-scramble-row-btn');
+
+        //テンプレート用要素
+        const templateSelect = document.getElementById('template-select');
+        const applyTemplateBtn = document.getElementById('apply-template-btn');
         
         const snapToGridCheck = document.getElementById('snap-to-grid-check');
         const showGridCheck = document.getElementById('show-grid-check');
+
+        //行列作成チェックボックス
+        const createAsMatrixCheck = document.getElementById('create-as-matrix');
 
         // ★★★ カウンター要素の取得 ★★★
         const totalCountEl = document.getElementById('total-count');
@@ -309,37 +353,86 @@
             updateStatus();
         });
 
+        // ★★★ テンプレート配置処理 ★★★
+        applyTemplateBtn.addEventListener('click', () => {
+            const templateType = templateSelect.value;
+            if (templateType === 'adj_graph_g') {
+                applyAdjacencyCommitmentGraphG();
+            }
+        });
+
         addCardForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const formData = new FormData(addCardForm);
-            const cardData = Object.fromEntries(formData.entries());
-            const count = parseInt(cardData.cardCount) || 1;
+            try {
+                const formData = new FormData(addCardForm);
+                const cardData = Object.fromEntries(formData.entries());
+                const count = parseInt(cardData.cardCount) || 1;
+                const isMatrix = createAsMatrixCheck ? createAsMatrixCheck.checked : false;
 
-            for (let i = 0; i < count; i++) {
-                const singleCardData = { ...cardData };
-                const offsetX = (i % 5) * 20 - 40;
-                const offsetY = Math.floor(i / 5) * 20 - 20;
+                // ★★★ 修正: n を count から取得 ★★★
+                const n = count;
 
-                let left = board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX;
-                let top = board.scrollTop + (board.clientHeight / 2) - 80 + offsetY;
-                
-                if (snapToGridCheck.checked) {
-                    left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
-                    top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                if (isMatrix) {
+                    // 行列配置 (N×N)
+                    const totalWidth = n * GRID_WIDTH;
+                    const totalHeight = n * GRID_HEIGHT;
+                    const startX = board.scrollLeft + (board.clientWidth / 2) - (totalWidth / 2);
+                    const startY = board.scrollTop + (board.clientHeight / 2) - (totalHeight / 2);
+
+                    for (let r = 0; r < n; r++) {
+                        for (let c = 0; c < n; c++) {
+                            const singleCardData = { ...cardData };
+                            let left = startX + c * GRID_WIDTH;
+                            let top = startY + r * GRID_HEIGHT;
+
+                            if (snapToGridCheck.checked) {
+                                left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
+                                top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                            }
+
+                            singleCardData.left = `${left}px`;
+                            singleCardData.top = `${top}px`;
+                            singleCardData.zIndex = zIndexCounter++;
+                            createCard(singleCardData);
+                        }
+                    }
+                } else {
+                    // 通常配置（重ねて配置）
+                    for (let i = 0; i < n; i++) {
+                        const singleCardData = { ...cardData };
+                        const offsetX = (i % 5) * 20 - 40;
+                        const offsetY = Math.floor(i / 5) * 20 - 20;
+
+                        let left = board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX;
+                        let top = board.scrollTop + (board.clientHeight / 2) - 80 + offsetY;
+                        
+                        if (snapToGridCheck.checked) {
+                            left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
+                            top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                        }
+
+                        singleCardData.left = `${left}px`;
+                        singleCardData.top = `${top}px`;
+                        singleCardData.zIndex = zIndexCounter++;
+                        createCard(singleCardData);
+                    }
                 }
-
-                singleCardData.left = `${left}px`;
-                singleCardData.top = `${top}px`;
-                singleCardData.zIndex = zIndexCounter++;
-                createCard(singleCardData);
+                
+                updateStatus();
+                modal.close();
+                addCardForm.reset();
+                
+                // UI状態のリセット
+                const playingRadio = document.querySelector('input[name="cardType"][value="playingCard"]');
+                if (playingRadio) playingRadio.checked = true;
+                    
+                document.getElementById('card-count').value = '1';
+                if (createAsMatrixCheck) createAsMatrixCheck.checked = false;
+                playingCardOptions.classList.remove('hidden');
+                colorCardOptions.classList.add('hidden');
+            } catch (error) {
+                alert("カード作成中にエラーが発生しました: " + error.message);
             }
-            
-            updateStatus(); // ★★★ 更新
-            modal.close();
-            addCardForm.reset();
-            document.getElementById('card-count').value = '1';
-            playingCardOptions.classList.remove('hidden');
-            colorCardOptions.classList.add('hidden');
         });
 
         clearLayoutBtn.addEventListener('click', () => {
@@ -459,6 +552,112 @@
             showFeedback('縦方向に1枚下移動しました');
         });
 
+        // ★★★ パイルスクランブル（列）の実装 ★★★
+        pileScrambleColBtn.addEventListener('click', () => {
+            if (selectedCards.size === 0) {
+                showFeedback('カードを選択してください。');
+                return;
+            }
+            const cardsArray = Array.from(selectedCards);
+            
+            // X座標で列をグループ化
+            const colMap = new Map();
+            cardsArray.forEach(card => {
+                const x = parseInt(card.style.left || 0);
+                // 多少のズレを許容して列をまとめる
+                const colKey = Math.round(x / GRID_WIDTH);
+                if (!colMap.has(colKey)) colMap.set(colKey, []);
+                colMap.get(colKey).push(card);
+            });
+
+            const colKeys = Array.from(colMap.keys()).sort((a, b) => a - b);
+            const n = colKeys.length;
+            if (n < 2) {
+                showFeedback('シャッフルする列が2つ以上必要です。');
+                return;
+            }
+
+            // 列の元の代表X座標リストを取得
+            const originalXPositions = colKeys.map(key => {
+                return colMap.get(key)[0].style.left;
+            });
+
+            // ランダムな順列（シャッフル）を作成
+            // フィッシャー–イェーツのシャッフル
+            const indices = Array.from({length: n}, (_, i) => i);
+            for (let i = n - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            // 各列を新しい位置へ移動
+            colKeys.forEach((oldKey, originalIndex) => {
+                const targetIndex = indices[originalIndex]; // シャッフル後のインデックス
+                const newX = originalXPositions[targetIndex]; // そのインデックスのX座標
+                
+                const cardsInCol = colMap.get(oldKey);
+                cardsInCol.forEach(card => {
+                    card.style.left = newX;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+
+            incrementShuffleCount();
+            showFeedback(`パイルスクランブル(列)しました`);
+        });
+
+        // ★★★ パイルスクランブル（行）の実装 ★★★
+        pileScrambleRowBtn.addEventListener('click', () => {
+            if (selectedCards.size === 0) {
+                showFeedback('カードを選択してください。');
+                return;
+            }
+            const cardsArray = Array.from(selectedCards);
+            
+            // Y座標で行をグループ化
+            const rowMap = new Map();
+            cardsArray.forEach(card => {
+                const y = parseInt(card.style.top || 0);
+                const rowKey = Math.round(y / GRID_HEIGHT);
+                if (!rowMap.has(rowKey)) rowMap.set(rowKey, []);
+                rowMap.get(rowKey).push(card);
+            });
+
+            const rowKeys = Array.from(rowMap.keys()).sort((a, b) => a - b);
+            const n = rowKeys.length;
+            if (n < 2) {
+                showFeedback('シャッフルする行が2つ以上必要です。');
+                return;
+            }
+
+            // 行の元の代表Y座標リストを取得
+            const originalYPositions = rowKeys.map(key => {
+                return rowMap.get(key)[0].style.top;
+            });
+
+            // ランダムな順列を作成
+            const indices = Array.from({length: n}, (_, i) => i);
+            for (let i = n - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            // 各行を新しい位置へ移動
+            rowKeys.forEach((oldKey, originalIndex) => {
+                const targetIndex = indices[originalIndex];
+                const newY = originalYPositions[targetIndex];
+                
+                const cardsInRow = rowMap.get(oldKey);
+                cardsInRow.forEach(card => {
+                    card.style.top = newY;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+
+            incrementShuffleCount();
+            showFeedback(`パイルスクランブル(行)しました`);
+        });
+
 
         confirmOkBtn.addEventListener('click', () => {
             if (confirmCallback) confirmCallback();
@@ -487,6 +686,59 @@
 
 
         // --- 関数定義 ---
+
+        // ★★★ テンプレート：隣接コミットメント (グラフG) ★★★
+        function applyAdjacencyCommitmentGraphG() {
+            /* グラフGの隣接行列 (5x5)
+               頂点: 1,2,3,4,5
+               辺: (1,2), (1,5), (2,3), (3,4), (4,5)
+               
+               行列:
+                 1 2 3 4 5
+               1 H D C C D
+               2 D H D C C
+               3 C D H D C
+               4 C C D H D
+               5 D C C D H
+               
+               H=ハート(対角), D=ダイヤ(1), C=クラブ(0)
+            */
+            const matrix = [
+                ['♥', '♦', '♣', '♣', '♦'], // 1行目
+                ['♦', '♥', '♦', '♣', '♣'], // 2行目
+                ['♣', '♦', '♥', '♦', '♣'], // 3行目
+                ['♣', '♣', '♦', '♥', '♦'], // 4行目
+                ['♦', '♣', '♣', '♦', '♥']  // 5行目
+            ];
+
+            const startX = board.scrollLeft + (board.clientWidth / 2) - (2.5 * GRID_WIDTH);
+            const startY = board.scrollTop + (board.clientHeight / 2) - (2.5 * GRID_HEIGHT);
+
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const suit = matrix[r][c];
+                    let left = startX + c * GRID_WIDTH;
+                    let top = startY + r * GRID_HEIGHT;
+
+                    // グリッドスナップが有効なら位置を補正
+                    if (snapToGridCheck.checked) {
+                        left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
+                        top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                    }
+
+                    const cardData = {
+                        cardType: 'playingCard',
+                        suit: suit,
+                        left: `${left}px`,
+                        top: `${top}px`,
+                        zIndex: zIndexCounter++
+                    };
+                    createCard(cardData);
+                }
+            }
+            updateStatus();
+            showFeedback('隣接コミットメント(グラフG)を配置しました');
+        }
         
         // ★★★ ステータス更新関数 ★★★
         function updateStatus() {
