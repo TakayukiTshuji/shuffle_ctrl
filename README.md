@@ -20,7 +20,7 @@
 ### 一般ユーザー向け (Windows)
 このリポジトリの **[Releases](https://github.com/TakayukiTshuji/shuffle_ctrl/releases)** ページから、最新のインストーラー（`.exe`）をダウンロードしてください。
 
-1. `cardshuffle-0.1.3-setup.exe` をダウンロード。
+1. `cardshuffle-0.1.4-setup.exe` をダウンロード。
 2. ファイルを実行するとインストールが完了し、アプリが起動します。
 
 ### 開発者向け (For Developers)
