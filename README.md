@@ -1,4 +1,4 @@
-# Card-based ZKP Simulator
+# シャッフルコントロール
 
 カードベースゼロ知識証明（Physical Zero-Knowledge Proof）のプロトコルを、物理的なカードを使わずにPC上でシミュレーション・実演するためのデスクトップアプリケーションです。
 
