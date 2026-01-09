@@ -1,4 +1,4 @@
-# Card-based ZKP Simulator
+# シャッフルコントロール
 
 カードベースゼロ知識証明（Physical Zero-Knowledge Proof）のプロトコルを、物理的なカードを使わずにPC上でシミュレーション・実演するためのデスクトップアプリケーションです。
 
@@ -20,7 +20,7 @@
 ### 一般ユーザー向け (Windows)
 このリポジトリの **[Releases](https://github.com/TakayukiTshuji/shuffle_ctrl/releases)** ページから、最新のインストーラー（`.exe`）をダウンロードしてください。
 
-1. `cardshuffle-0.1.5-setup.exe` をダウンロード。
+1. `cardshuffle-0.1.3-setup.exe` をダウンロード。
 2. ファイルを実行するとインストールが完了し、アプリが起動します。
 
 ### 開発者向け (For Developers)
