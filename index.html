@@ -102,17 +102,29 @@
             background-color: #2563eb !important; /* blue-600 */
             box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
         }
+        #selection-box {
+            position: absolute;
+            border: 2px dashed #3b82f6;
+            background-color: rgba(59, 130, 246, 0.2);
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-
     <div class="flex h-screen w-screen">
+        <!--<button id="update-btn" style="padding: 10px 20px; cursor: pointer;">
+            更新の確認
+        </button>-->
         <!-- 左側のカード配置エリア -->
         <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-auto">
-            <div id="canvas" class="relative bg-green-800"></div>
+            <div id="canvas" class="relative bg-green-800">
+                <div id="selection-box"></div>
+            </div>
             <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none" style="z-index: 100;">
                 <h1 class="font-bold text-xl">カード配置エリア</h1>
                 <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
@@ -267,7 +279,7 @@
     </dialog>
 
     <!-- 確認モーダル -->
-    <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm">
+    <dialog id="confirm-modal" class="p-6 bg-white rounded-lg shadow-xl w-full max-w-sm" style="zoom: 160%;">
         <h3 class="text-lg font-bold text-gray-900 mb-4">確認</h3>
         <p id="confirm-message" class="text-gray-700 mb-6">本当に実行しますか？</p>
         <div class="flex justify-end space-x-4">
@@ -278,6 +290,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const {icpRenderer} = require('electron');
         const board = document.getElementById('board');
         const canvas = document.getElementById('canvas');
         const addCardBtn = document.getElementById('add-card-btn');
@@ -319,17 +332,39 @@
         const shuffleCountEl = document.getElementById('shuffle-count');
         const resetShuffleBtn = document.getElementById('reset-shuffle-count-btn');
 
+        //ズームUI
+        const zoomSlider = document.getElementById('zoom-slider');
+        const zoomValue = document.getElementById('zoom-value');
+        const zoomResetBtn = document.getElementById('zoom-reset-btn');
+
+        const selectionBox = document.getElementById('selection-box');
+
+        const updateBtn = document.getElementById('update-btn');
+
         let zIndexCounter = 1;
         let confirmCallback = null;
         const selectedCards = new Set();
         let isGroupSelectMode = false;
         let shuffleCounter = 0; // シャッフル回数
+        let currentZoom = 1.0; //ズーム状態の管理
+        // 矩形選択用の変数
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectionEnd = { x: 0, y: 0 };
+        //リサイズ機能の調整するかの判定
+        let isResizing = false;
         
         const GRID_WIDTH = 120;
         const GRID_HEIGHT = 170;
 
         board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
         board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
+
+        if(updateBtn) {
+            updateBtn.addEventListener('click', () => {
+                icpRenderer.send('manual-update-check');
+            });
+        }
         
         // --- イベントリスナー ---
         addCardBtn.addEventListener('click', () => modal.showModal());
@@ -684,6 +719,47 @@
             }
         });
 
+        //矩形選択のイベントリスナー (boardに対してmousedown)
+        board.addEventListener('mousedown', (e) => {
+            // カードやコントロールがターゲットの場合は何もしない（カードのドラッグ等を優先）
+            // e.target が board または canvas の場合のみ矩形選択を開始
+            if (e.target !== board && e.target !== canvas) return;
+            
+            // 右クリック等は除外
+            if (e.button !== 0) return;
+
+            // 矩形選択開始
+            isSelecting = true;
+            
+            // 座標計算 (Canvas基準)
+            // e.clientX はビューポート基準なので、canvasのスクロール量等を考慮
+            const boardRect = board.getBoundingClientRect();
+            const startX = e.clientX - boardRect.left + board.scrollLeft;
+            const startY = e.clientY - boardRect.top + board.scrollTop;
+            
+            selectionStart = { x: startX, y: startY };
+            selectionEnd = { x: startX, y: startY };
+            
+            // 選択ボックスの初期化
+            selectionBox.style.left = `${startX}px`;
+            selectionBox.style.top = `${startY}px`;
+            selectionBox.style.width = '0px';
+            selectionBox.style.height = '0px';
+            selectionBox.style.display = 'block';
+
+            // mousemove と mouseup は document レベルで監視して、範囲外に出ても追従するようにする
+            document.addEventListener('mousemove', onSelectionMove);
+            document.addEventListener('mouseup', onSelectionUp);
+        });
+
+        zoomSlider.addEventListener('input', (e) => {
+            setZoom(e.target.value);
+        });
+
+        zoomResetBtn.addEventListener('click', () => {
+            setZoom(1.0);
+        });
+
 
         // --- 関数定義 ---
 
@@ -1018,6 +1094,118 @@
             };
             reader.readAsText(file);
         }
+
+        function onSelectionUp(e) {
+            if (!isSelecting) return;
+            isSelecting = false;
+            selectionBox.style.display = 'none';
+            document.removeEventListener('mousemove', onSelectionMove);
+            document.removeEventListener('mouseup', onSelectionUp);
+
+            // ドラッグ量が小さい場合はクリックとみなして選択解除
+            const dist = Math.sqrt(Math.pow(selectionEnd.x - selectionStart.x, 2) + Math.pow(selectionEnd.y - selectionStart.y, 2));
+            if (dist < 5) {
+                // クリック時の挙動（Shiftなしの場合のみ全解除するなど条件分岐可能だが、
+                // 元の仕様に合わせてクリック＝全解除とする）
+                // ただし、グループ選択モードONの場合は解除しない方がいいかもしれないが、
+                // 元の仕様ではクリックで解除だったのでそれに従うか、Shiftキーを見て判断する。
+                // ここではシンプルに「Shiftキーなしなら全解除」とする。
+                if (!e.shiftKey) {
+                    clearSelection();
+                }
+                return;
+            }
+
+
+
+             // 矩形選択の確定
+            const rectLeft = Math.min(selectionStart.x, selectionEnd.x);
+            const rectTop = Math.min(selectionStart.y, selectionEnd.y);
+            const rectRight = rectLeft + Math.abs(selectionEnd.x - selectionStart.x);
+            const rectBottom = rectTop + Math.abs(selectionEnd.y - selectionStart.y);
+
+            // Shiftキーが押されていない場合は、既存の選択をクリア
+            if (!e.shiftKey) {
+                clearSelection();
+            }
+
+            // 全カードに対して交差判定
+            const cards = canvas.querySelectorAll('.card-container');
+            let addedCount = 0;
+            cards.forEach(card => {
+                const cardLeft = parseInt(card.style.left || 0);
+                const cardTop = parseInt(card.style.top || 0);
+                const cardWidth = card.offsetWidth;
+                const cardHeight = card.offsetHeight;
+                const cardRight = cardLeft + cardWidth;
+                const cardBottom = cardTop + cardHeight;
+
+                // 交差判定 (AABB check)
+                const isOverlapping = !(rectRight < cardLeft || 
+                                      rectLeft > cardRight || 
+                                      rectBottom < cardTop || 
+                                      rectTop > cardBottom);
+
+                if (isOverlapping) {
+                    if (!selectedCards.has(card)) {
+                        selectedCards.add(card);
+                        card.classList.add('selected');
+                        addedCount++;
+                    }
+                }
+            });
+            
+            updateStatus();
+        }
+
+        function onSelectionMove(e) {
+            if (!isSelecting) return;
+            e.preventDefault(); // テキスト選択などを防止
+
+            const boardRect = board.getBoundingClientRect();
+            // 現在のマウス位置をCanvas座標に変換
+            const currentX = e.clientX - boardRect.left + board.scrollLeft;
+            const currentY = e.clientY - boardRect.top + board.scrollTop;
+            
+            selectionEnd = { x: currentX, y: currentY };
+
+            // 矩形の描画更新
+            const left = Math.min(selectionStart.x, selectionEnd.x);
+            const top = Math.min(selectionStart.y, selectionEnd.y);
+            const width = Math.abs(selectionEnd.x - selectionStart.x);
+            const height = Math.abs(selectionEnd.y - selectionStart.y);
+
+            selectionBox.style.left = `${left}px`;
+            selectionBox.style.top = `${top}px`;
+            selectionBox.style.width = `${width}px`;
+            selectionBox.style.height = `${height}px`;
+        }
+
+        function handleResizeMove(e) {
+            if (!isResizing) return;
+            // 右端からの距離を計算して幅を設定
+            const newWidth = document.body.clientWidth - e.clientX;
+            // 最小・最大幅の制限
+            if (newWidth > 150 && newWidth < 600) {
+                controlPanel.style.width = `${newWidth}px`;
+            }
+        }
+
+        function handleResizeUp() {
+            isResizing = false;
+            resizer.classList.remove('resizing');
+            document.body.style.cursor = '';
+            document.removeEventListener('mousemove', handleResizeMove);
+            document.removeEventListener('mouseup', handleResizeUp);
+        }
+
+        // ★★★ ズーム機能 ★★★
+        function setZoom(value) {
+            currentZoom = parseFloat(value);
+            canvas.style.transform = `scale(${currentZoom})`;
+            zoomSlider.value = currentZoom;
+            zoomValue.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
         
         // 初期状態更新
         updateStatus();
@@ -1026,5 +1214,3 @@
 
 </body>
 </html>
-```
-```eof
