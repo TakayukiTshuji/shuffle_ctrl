@@ -59,10 +59,11 @@
           background: rgba(0, 0, 0, 0.5);
         }
         #canvas {
-            width: 5000px;
-            height: 5000px;
+            width: 10000px;
+            height: 10000px;
             background-size: 120px 170px;
             background-position: -60px -85px;
+            transform-origin: 0 0;
         }
         .show-grid {
             background-image: 
@@ -110,6 +111,21 @@
             z-index: 9999;
             display: none;
         }
+        #resizer {
+            width: 8px;
+            background-color: #cbd5e1;
+            cursor: col-resize;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        #resizer:hover, #resizer.resizing {
+            background-color: #3b82f6;
+        }
+        #board {
+            overflow: hidden; /* autoから変更 */
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,20 +137,25 @@
             更新の確認
         </button>-->
         <!-- 左側のカード配置エリア -->
-        <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-auto">
-            <div id="canvas" class="relative bg-green-800">
-                <div id="selection-box"></div>
-            </div>
-            <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none" style="z-index: 100;">
-                <h1 class="font-bold text-xl">カード配置エリア</h1>
-                <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
-                <p class="text-sm">・ドラッグ/スワイプで移動できます。</p>
-                <p class="text-sm">・「グループ選択モード」で複数選択できます。</p>
+        <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-hidden">
+            <div id="scroll-container" style="width: 100%; height: 100%; overflow: auto; position: relative;">
+                <div id="canvas" class="relative bg-green-800">
+                    <div id="selection-box"></div>
+                </div>
+                <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none" style="z-index: 100;">
+                    <h1 class="font-bold text-xl">カード配置エリア</h1>
+                    <p class="text-sm">・ダブルクリック/タップで裏返せます。</p>
+                    <p class="text-sm">・ドラッグ/スワイプで移動できます。</p>
+                    <p class="text-sm">・「グループ選択モード」で複数選択できます。</p>
+                </div>
             </div>
         </main>
 
+        <!-- リサイザー要素 -->
+        <div id="resizer" title="ドラッグしてパネル幅を調整"></div>
+
         <!-- 右側のコントロールパネル -->
-        <aside class="w-81 bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto" style="zoom: 130%;">
+        <aside id="control-panel" class="flex-none bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto" style="width: 300px; min-width: 220px; max-width: 1000px;">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
             
             <!-- ★★★ ステータスパネル (枚数・カウンター) ★★★ -->
@@ -153,6 +174,18 @@
                         <span id="shuffle-count" class="font-bold text-lg text-indigo-600">0</span>
                         <button id="reset-shuffle-count-btn" class="text-xs bg-gray-300 hover:bg-gray-400 px-2 py-1 rounded">リセット</button>
                     </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-300 p-3 rounded-lg space-y-2">
+                <h3 class="font-bold text-gray-700">表示設定</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-gray-600">ズーム:</span>
+                    <input type="range" id="zoom-slider" min="0.2" max="2.0" step="0.1" value="1.0" class="w-full cursor-pointer">
+                    <span id="zoom-value" class="text-xs font-bold w-10 text-right">100%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="zoom-reset-btn" class="text-xs bg-white hover:bg-gray-100 px-2 py-1 rounded shadow w-full">100%に戻す</button>
                 </div>
             </div>
 
@@ -292,6 +325,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         const {icpRenderer} = require('electron');
         const board = document.getElementById('board');
+        const scrollContainer = document.getElementById('scroll-container');
         const canvas = document.getElementById('canvas');
         const addCardBtn = document.getElementById('add-card-btn');
         const modal = document.getElementById('add-card-modal');
@@ -315,31 +349,26 @@
         const randomCutVerticalBtn = document.getElementById('random-cut-Vertical-btn');
         const pileScrambleColBtn = document.getElementById('pile-scramble-col-btn');
         const pileScrambleRowBtn = document.getElementById('pile-scramble-row-btn');
-
         //テンプレート用要素
         const templateSelect = document.getElementById('template-select');
-        const applyTemplateBtn = document.getElementById('apply-template-btn');
-        
+        const applyTemplateBtn = document.getElementById('apply-template-btn');        
         const snapToGridCheck = document.getElementById('snap-to-grid-check');
         const showGridCheck = document.getElementById('show-grid-check');
-
         //行列作成チェックボックス
         const createAsMatrixCheck = document.getElementById('create-as-matrix');
-
         // ★★★ カウンター要素の取得 ★★★
         const totalCountEl = document.getElementById('total-count');
         const selectedCountEl = document.getElementById('selected-count');
         const shuffleCountEl = document.getElementById('shuffle-count');
         const resetShuffleBtn = document.getElementById('reset-shuffle-count-btn');
-
         //ズームUI
         const zoomSlider = document.getElementById('zoom-slider');
         const zoomValue = document.getElementById('zoom-value');
         const zoomResetBtn = document.getElementById('zoom-reset-btn');
-
         const selectionBox = document.getElementById('selection-box');
-
         const updateBtn = document.getElementById('update-btn');
+        const controlPanel = document.getElementById('control-panel');
+        const resizer = document.getElementById('resizer');
 
         let zIndexCounter = 1;
         let confirmCallback = null;
@@ -357,8 +386,8 @@
         const GRID_WIDTH = 120;
         const GRID_HEIGHT = 170;
 
-        board.scrollTop = (canvas.scrollHeight - board.clientHeight) / 2;
-        board.scrollLeft = (canvas.scrollWidth - board.clientWidth) / 2;
+        scrollContainer.scrollTop = (canvas.scrollHeight - scrollContainer.clientHeight) / 2;
+        scrollContainer.scrollLeft = (canvas.scrollWidth - scrollContainer.clientWidth) / 2;
 
         if(updateBtn) {
             updateBtn.addEventListener('click', () => {
@@ -411,8 +440,8 @@
                     // 行列配置 (N×N)
                     const totalWidth = n * GRID_WIDTH;
                     const totalHeight = n * GRID_HEIGHT;
-                    const startX = board.scrollLeft + (board.clientWidth / 2) - (totalWidth / 2);
-                    const startY = board.scrollTop + (board.clientHeight / 2) - (totalHeight / 2);
+                    const startX = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2) - (totalWidth / 2);
+                    const startY = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2) - (totalHeight / 2);
 
                     for (let r = 0; r < n; r++) {
                         for (let c = 0; c < n; c++) {
@@ -438,8 +467,8 @@
                         const offsetX = (i % 5) * 20 - 40;
                         const offsetY = Math.floor(i / 5) * 20 - 20;
 
-                        let left = board.scrollLeft + (board.clientWidth / 2) - 56 + offsetX;
-                        let top = board.scrollTop + (board.clientHeight / 2) - 80 + offsetY;
+                        let left = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2) - 56 + offsetX;
+                        let top = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2) - 80 + offsetY;
                         
                         if (snapToGridCheck.checked) {
                             left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
@@ -720,36 +749,40 @@
         });
 
         //矩形選択のイベントリスナー (boardに対してmousedown)
-        board.addEventListener('mousedown', (e) => {
+        scrollContainer.addEventListener('mousedown', (e) => {
             // カードやコントロールがターゲットの場合は何もしない（カードのドラッグ等を優先）
             // e.target が board または canvas の場合のみ矩形選択を開始
-            if (e.target !== board && e.target !== canvas) return;
-            
-            // 右クリック等は除外
+            if (e.target !== scrollContainer && e.target !== canvas) return;
             if (e.button !== 0) return;
 
-            // 矩形選択開始
             isSelecting = true;
             
-            // 座標計算 (Canvas基準)
-            // e.clientX はビューポート基準なので、canvasのスクロール量等を考慮
-            const boardRect = board.getBoundingClientRect();
-            const startX = e.clientX - boardRect.left + board.scrollLeft;
-            const startY = e.clientY - boardRect.top + board.scrollTop;
+            const containerRect = scrollContainer.getBoundingClientRect();
+            // ズーム倍率を考慮した座標計算
+            const startX = (e.clientX - containerRect.left + scrollContainer.scrollLeft) / currentZoom;
+            const startY = (e.clientY - containerRect.top + scrollContainer.scrollTop) / currentZoom;
             
             selectionStart = { x: startX, y: startY };
             selectionEnd = { x: startX, y: startY };
             
-            // 選択ボックスの初期化
             selectionBox.style.left = `${startX}px`;
             selectionBox.style.top = `${startY}px`;
             selectionBox.style.width = '0px';
             selectionBox.style.height = '0px';
             selectionBox.style.display = 'block';
 
-            // mousemove と mouseup は document レベルで監視して、範囲外に出ても追従するようにする
             document.addEventListener('mousemove', onSelectionMove);
             document.addEventListener('mouseup', onSelectionUp);
+        });
+
+        // リサイザー
+        resizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isResizing = true;
+            resizer.classList.add('resizing');
+            document.body.style.cursor = 'col-resize';
+            document.addEventListener('mousemove', handleResizeMove);
+            document.addEventListener('mouseup', handleResizeUp);
         });
 
         zoomSlider.addEventListener('input', (e) => {
@@ -787,8 +820,8 @@
                 ['♦', '♣', '♣', '♦', '♥']  // 5行目
             ];
 
-            const startX = board.scrollLeft + (board.clientWidth / 2) - (2.5 * GRID_WIDTH);
-            const startY = board.scrollTop + (board.clientHeight / 2) - (2.5 * GRID_HEIGHT);
+            const startX = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2) - (2.5 * GRID_WIDTH);
+            const startY = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2) - (2.5 * GRID_HEIGHT);
 
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
@@ -1160,16 +1193,15 @@
 
         function onSelectionMove(e) {
             if (!isSelecting) return;
-            e.preventDefault(); // テキスト選択などを防止
+            e.preventDefault();
 
-            const boardRect = board.getBoundingClientRect();
-            // 現在のマウス位置をCanvas座標に変換
-            const currentX = e.clientX - boardRect.left + board.scrollLeft;
-            const currentY = e.clientY - boardRect.top + board.scrollTop;
+            const containerRect = scrollContainer.getBoundingClientRect();
+            // ズーム倍率を考慮した座標計算
+            const currentX = (e.clientX - containerRect.left + scrollContainer.scrollLeft) / currentZoom;
+            const currentY = (e.clientY - containerRect.top + scrollContainer.scrollTop) / currentZoom;
             
             selectionEnd = { x: currentX, y: currentY };
 
-            // 矩形の描画更新
             const left = Math.min(selectionStart.x, selectionEnd.x);
             const top = Math.min(selectionStart.y, selectionEnd.y);
             const width = Math.abs(selectionEnd.x - selectionStart.x);
@@ -1183,10 +1215,11 @@
 
         function handleResizeMove(e) {
             if (!isResizing) return;
-            // 右端からの距離を計算して幅を設定
             const newWidth = document.body.clientWidth - e.clientX;
-            // 最小・最大幅の制限
-            if (newWidth > 150 && newWidth < 600) {
+            const minWidth = 220;  // 最小幅
+            const maxWidth = Math.min(1000, document.body.clientWidth * 0.5);  // 最大幅（画面の半分まで）
+            
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
                 controlPanel.style.width = `${newWidth}px`;
             }
         }
@@ -1201,8 +1234,21 @@
 
         // ★★★ ズーム機能 ★★★
         function setZoom(value) {
+            const oldZoom = currentZoom;
             currentZoom = parseFloat(value);
+            
+            // スクロール位置の中心を保持
+            const scrollCenterX = scrollContainer.scrollLeft + scrollContainer.clientWidth / 2;
+            const scrollCenterY = scrollContainer.scrollTop + scrollContainer.clientHeight / 2;
+            
+            // ズーム適用
             canvas.style.transform = `scale(${currentZoom})`;
+            
+            // スクロール位置を調整（中心を維持）
+            const zoomRatio = currentZoom / oldZoom;
+            scrollContainer.scrollLeft = scrollCenterX * zoomRatio - scrollContainer.clientWidth / 2;
+            scrollContainer.scrollTop = scrollCenterY * zoomRatio - scrollContainer.clientHeight / 2;
+            
             zoomSlider.value = currentZoom;
             zoomValue.textContent = `${Math.round(currentZoom * 100)}%`;
         }
