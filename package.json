@@ -1,6 +1,6 @@
 {
   "name": "cardshuffle",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "start": "electron-forge start",

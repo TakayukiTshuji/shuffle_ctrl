@@ -59,11 +59,12 @@
           background: rgba(0, 0, 0, 0.5);
         }
         #canvas {
-            width: 10000px;
-            height: 10000px;
-            background-size: 120px 170px;
-            background-position: -60px -85px;
-            transform-origin: 0 0;
+            width: 10000px; 
+            height: 10000px; 
+            background-size: 120px 170px; 
+            background-position: -60px -85px; 
+            transform-origin: 0 0; 
+            will-change: transform;
         }
         .show-grid {
             background-image: 
@@ -126,6 +127,32 @@
         #board {
             overflow: hidden; /* autoから変更 */
         }
+        .protocol-item {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .protocol-item:before {
+            content: "▼";
+            color: #94a3b8;
+            font-size: 0.7rem;
+            margin-right: 0.5rem;
+        }
+        .executing {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        #scroll-wrapper {
+            position: relative;
+            transform-origin: 0 0;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,14 +160,13 @@
 </head>
 <body class="bg-gray-100">
     <div class="flex h-screen w-screen">
-        <!--<button id="update-btn" style="padding: 10px 20px; cursor: pointer;">
-            更新の確認
-        </button>-->
         <!-- 左側のカード配置エリア -->
         <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-hidden">
             <div id="scroll-container" style="width: 100%; height: 100%; overflow: auto; position: relative;">
-                <div id="canvas" class="relative bg-green-800">
-                    <div id="selection-box"></div>
+                <div id="scroll-wrapper" style="position: relative; transform-origin: 0 0;">
+                    <div id="canvas" class="relative bg-green-800">
+                        <div id="selection-box"></div>
+                    </div>
                 </div>
                 <div class="absolute top-4 left-4 text-white text-lg bg-black bg-opacity-30 p-2 rounded-lg pointer-events-none" style="z-index: 100;">
                     <h1 class="font-bold text-xl">カード配置エリア</h1>
@@ -155,7 +181,7 @@
         <div id="resizer" title="ドラッグしてパネル幅を調整"></div>
 
         <!-- 右側のコントロールパネル -->
-        <aside id="control-panel" class="flex-none bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto" style="width: 300px; min-width: 220px; max-width: 1000px;">
+        <aside id="control-panel" class="flex-none bg-gray-200 p-4 shadow-lg flex flex-col space-y-4 overflow-y-auto" style="width: 400px; min-width: 220px; max-width: 1000px;">
             <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-400 pb-2">コントロールパネル</h2>
             
             <!-- ★★★ ステータスパネル (枚数・カウンター) ★★★ -->
@@ -181,11 +207,49 @@
                 <h3 class="font-bold text-gray-700">表示設定</h3>
                 <div class="flex items-center space-x-2">
                     <span class="text-xs font-bold text-gray-600">ズーム:</span>
-                    <input type="range" id="zoom-slider" min="0.2" max="2.0" step="0.1" value="1.0" class="w-full cursor-pointer">
+                    <input type="range" id="zoom-slider" min="0.3" max="2.0" step="0.1" value="1.0" class="w-full cursor-pointer">
                     <span id="zoom-value" class="text-xs font-bold w-10 text-right">100%</span>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button id="zoom-reset-btn" class="text-xs bg-white hover:bg-gray-100 px-2 py-1 rounded shadow w-full">100%に戻す</button>
+                </div>
+            </div>
+
+            <!-- プロトコル作成UI -->
+            <div class="bg-orange-100 p-4 rounded-lg space-y-3 border border-orange-200 mb-6">
+                <h3 class="font-bold text-orange-800 text-lg">プロトコル作成 (一連の流れ)</h3>
+                <div class="flex space-x-2">
+                    <select id="protocol-action-select" class="flex-1 p-2 border border-orange-300 rounded text-sm bg-white">
+                        <option value="randomCutHorizon">ランダムカット(横)</option>
+                        <option value="randomCutVertical">ランダムカット(縦)</option>
+                        <option value="pileScrambleCol">パイルスクランブル(列)</option>
+                        <option value="pileScrambleRow">パイルスクランブル(行)</option>
+                        <option value="flip">裏返す/表にする</option>
+                    </select>
+                    <input type="number" id="protocol-action-count" value="1" min="1" 
+                        class="w-20 p-2 border border-orange-300 rounded text-sm text-center" 
+                        title="回数">
+                </div>
+                <button id="add-to-protocol-btn" 
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-3 rounded shadow">
+                    ＋ 手順に追加
+                </button>
+                
+                <!-- プロトコルリスト -->
+                <div id="protocol-list" 
+                    class="bg-gray-50 p-3 rounded border border-gray-300 min-h-[150px] max-h-[300px] overflow-y-auto">
+                    <p class="text-sm text-gray-400 text-center py-4 empty-msg">手順がありません</p>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button id="run-protocol-btn" 
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded shadow">
+                        ▶ 実行
+                    </button>
+                    <button id="clear-protocol-btn" 
+                            class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-3 rounded shadow">
+                        クリア
+                    </button>
                 </div>
             </div>
 
@@ -326,6 +390,7 @@
         const {icpRenderer} = require('electron');
         const board = document.getElementById('board');
         const scrollContainer = document.getElementById('scroll-container');
+        const scrollWrapper = document.getElementById('scroll-wrapper');
         const canvas = document.getElementById('canvas');
         const addCardBtn = document.getElementById('add-card-btn');
         const modal = document.getElementById('add-card-modal');
@@ -369,7 +434,15 @@
         const updateBtn = document.getElementById('update-btn');
         const controlPanel = document.getElementById('control-panel');
         const resizer = document.getElementById('resizer');
+        // デモ用の簡易実装
+        const protocolActionSelect = document.getElementById('protocol-action-select');
+        const protocolActionCount = document.getElementById('protocol-action-count');
+        const addToProtocolBtn = document.getElementById('add-to-protocol-btn');
+        const protocolList = document.getElementById('protocol-list');
+        const runProtocolBtn = document.getElementById('run-protocol-btn');
+        const clearProtocolBtn = document.getElementById('clear-protocol-btn');
 
+        let protocolQueue = [];
         let zIndexCounter = 1;
         let confirmCallback = null;
         const selectedCards = new Set();
@@ -381,8 +454,7 @@
         let selectionStart = { x: 0, y: 0 };
         let selectionEnd = { x: 0, y: 0 };
         //リサイズ機能の調整するかの判定
-        let isResizing = false;
-        
+        let isResizing = false;   
         const GRID_WIDTH = 120;
         const GRID_HEIGHT = 170;
 
@@ -792,6 +864,20 @@
         zoomResetBtn.addEventListener('click', () => {
             setZoom(1.0);
         });
+
+        addToProtocolBtn.addEventListener('click', () => {
+            const action = protocolActionSelect.value;
+            const count = parseInt(protocolActionCount.value) || 1;
+            protocolQueue.push({ action, count });
+            updateProtocolListDisplay();
+        });
+
+        clearProtocolBtn.addEventListener('click', () => {
+            protocolQueue = [];
+            updateProtocolListDisplay();
+        });
+
+        runProtocolBtn.addEventListener('click', runProtocol);
 
 
         // --- 関数定義 ---
@@ -1237,24 +1323,281 @@
             const oldZoom = currentZoom;
             currentZoom = parseFloat(value);
             
-            // スクロール位置の中心を保持
-            const scrollCenterX = scrollContainer.scrollLeft + scrollContainer.clientWidth / 2;
-            const scrollCenterY = scrollContainer.scrollTop + scrollContainer.clientHeight / 2;
+            const viewportCenterX = scrollContainer.scrollLeft + scrollContainer.clientWidth / 2;
+            const viewportCenterY = scrollContainer.scrollTop + scrollContainer.clientHeight / 2;
             
-            // ズーム適用
+            const centerXInCanvas = viewportCenterX / oldZoom;
+            const centerYInCanvas = viewportCenterY / oldZoom;
+            
             canvas.style.transform = `scale(${currentZoom})`;
             
-            // スクロール位置を調整（中心を維持）
-            const zoomRatio = currentZoom / oldZoom;
-            scrollContainer.scrollLeft = scrollCenterX * zoomRatio - scrollContainer.clientWidth / 2;
-            scrollContainer.scrollTop = scrollCenterY * zoomRatio - scrollContainer.clientHeight / 2;
+            const scaledWidth = canvas.offsetWidth * currentZoom;
+            const scaledHeight = canvas.offsetHeight * currentZoom;
+            scrollWrapper.style.width = `${scaledWidth}px`;
+            scrollWrapper.style.height = `${scaledHeight}px`;
+            
+            scrollContainer.scrollLeft = centerXInCanvas * currentZoom - scrollContainer.clientWidth / 2;
+            scrollContainer.scrollTop = centerYInCanvas * currentZoom - scrollContainer.clientHeight / 2;
             
             zoomSlider.value = currentZoom;
             zoomValue.textContent = `${Math.round(currentZoom * 100)}%`;
         }
+
+        async function executeProtocolAction(action, targetCards) {
+            switch (action) {
+                case 'randomCutHorizon':
+                    await execRandomCutHorizon(targetCards);
+                    break;
+                case 'randomCutVertical':
+                    await execRandomCutVertical(targetCards);
+                    break;
+                case 'pileScrambleCol':
+                    await execPileScrambleCol(targetCards);
+                    break;
+                case 'pileScrambleRow':
+                    await execPileScrambleRow(targetCards);
+                    break;
+                case 'flip':
+                    await execFlip(targetCards);
+                    break;
+                default:
+                    console.warn('未知のプロトコル操作:', action);
+            }
+        }
+
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getActionLabel(action) {
+            const map = {
+                'randomCutHorizon': 'ランダムカット(横)',
+                'randomCutVertical': 'ランダムカット(縦)',
+                'pileScrambleCol': 'パイルスクランブル(列)',
+                'pileScrambleRow': 'パイルスクランブル(行)',
+                'flip': '裏返す/表にする'
+            };
+            return map[action] || action;
+        }
+
+        function updateProtocolListDisplay() {
+            protocolList.innerHTML = '';
+            if (protocolQueue.length === 0) {
+                protocolList.innerHTML = '<p class="text-sm text-gray-400 text-center py-4 empty-msg">手順がありません</p>';
+                return;
+            }
+
+            protocolQueue.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'protocol-item text-sm';
+                
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = `${getActionLabel(item.action)} × ${item.count}`;
+                labelSpan.className = 'font-semibold text-gray-700';
+                
+                const delBtn = document.createElement('button');
+                delBtn.textContent = '×';
+                delBtn.className = 'text-red-500 font-bold hover:text-red-700 ml-2 px-2';
+                delBtn.onclick = () => {
+                    protocolQueue.splice(index, 1);
+                    updateProtocolListDisplay();
+                };
+
+                div.appendChild(labelSpan);
+                div.appendChild(delBtn);
+                protocolList.appendChild(div);
+            });
+        }
+
+        async function runProtocol() {
+            if (protocolQueue.length === 0) {
+                showFeedback('プロトコルが空です');
+                return;
+            }
+
+            // ★ 実行開始時の選択カードを固定
+            const targetCards = new Set(selectedCards);
+
+            if (targetCards.size === 0) {
+                showFeedback('カードが選択されていません');
+                return;
+            }
+
+            runProtocolBtn.disabled = true;
+            runProtocolBtn.textContent = '実行中...';
+            addToProtocolBtn.disabled = true;
+
+            const listItems = protocolList.querySelectorAll('.protocol-item');
+
+            try {
+                for (let i = 0; i < protocolQueue.length; i++) {
+                    const { action, count } = protocolQueue[i];
+                    if (listItems[i]) listItems[i].classList.add('executing');
+
+                    for (let c = 0; c < count; c++) {
+                        await executeProtocolAction(action, targetCards);
+                        await sleep(600);
+                    }
+
+                    if (listItems[i]) listItems[i].classList.remove('executing');
+                }
+
+                showFeedback('プロトコル実行完了');
+            } catch (e) {
+                console.error(e);
+                showFeedback('実行中にエラーが発生しました');
+            } finally {
+                runProtocolBtn.disabled = false;
+                runProtocolBtn.textContent = '▶ 実行';
+                addToProtocolBtn.disabled = false;
+            }
+        }
+
+        // --- シャッフルロジック (Promiseを返す非同期関数化) ---
+
+        // ランダムカット（横）
+        async function execRandomCutHorizon(targetCards) {
+            if (targetCards.size < 2) return;
+            const cardsArray = Array.from(targetCards);
+            
+            cardsArray.sort((a, b) => {
+                const ay = parseInt(a.style.top || 0);
+                const by = parseInt(b.style.top || 0);
+                if (Math.abs(ay - by) > GRID_HEIGHT / 2) return ay - by;
+                return parseInt(a.style.left || 0) - parseInt(b.style.left || 0);
+            });
+
+            const positions = cardsArray.map(card => ({ left: card.style.left, top: card.style.top }));
+            const n = cardsArray.length;
+            const shift = Math.floor(Math.random() * (n - 1)) + 1;
+
+            cardsArray.forEach((card, index) => {
+                const newPosIndex = (index - shift + n) % n;
+                card.style.left = positions[newPosIndex].left;
+                card.style.top = positions[newPosIndex].top;
+                card.style.zIndex = zIndexCounter++;
+            });
+            incrementShuffleCount();
+        }
+
+        // ランダムカット（縦）
+        async function execRandomCutVertical(targetCards) {
+            if (targetCards.size < 2) return;
+            const cardsArray = Array.from(targetCards);
+            const columns = new Map();
+            cardsArray.forEach(card => {
+                const x = parseInt(card.style.left || 0);
+                const colKey = Math.round(x / GRID_WIDTH);
+                if (!columns.has(colKey)) columns.set(colKey, []);
+                columns.get(colKey).push(card);
+            });
+
+            columns.forEach(colCards => {
+                if (colCards.length < 2) return;
+                colCards.sort((a, b) => parseInt(a.style.top || 0) - parseInt(b.style.top || 0));
+                const positions = colCards.map(card => ({ left: card.style.left, top: card.style.top }));
+                const n = colCards.length;
+                const shift = Math.floor(Math.random() * (n - 1)) + 1;
+                
+                colCards.forEach((card, index) => {
+                    const newPosIndex = (index - shift + n) % n;
+                    card.style.left = positions[newPosIndex].left;
+                    card.style.top = positions[newPosIndex].top;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+            incrementShuffleCount();
+        }
+
+        // パイルスクランブル（列）
+        async function execPileScrambleCol(targetCards) {
+            if (targetCards.size === 0) return;
+            const cardsArray = Array.from(targetCards);
+            const colMap = new Map();
+            cardsArray.forEach(card => {
+                const x = parseInt(card.style.left || 0);
+                const colKey = Math.round(x / GRID_WIDTH);
+                if (!colMap.has(colKey)) colMap.set(colKey, []);
+                colMap.get(colKey).push(card);
+            });
+
+            const colKeys = Array.from(colMap.keys()).sort((a, b) => a - b);
+            const n = colKeys.length;
+            if (n < 2) return;
+
+            const originalXPositions = colKeys.map(key => colMap.get(key)[0].style.left);
+            const indices = Array.from({length: n}, (_, i) => i);
+            for (let i = n - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            colKeys.forEach((oldKey, originalIndex) => {
+                const targetIndex = indices[originalIndex];
+                const newX = originalXPositions[targetIndex];
+                const cardsInCol = colMap.get(oldKey);
+                cardsInCol.forEach(card => {
+                    card.style.left = newX;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+            incrementShuffleCount();
+        }
+
+        // パイルスクランブル（行）
+        async function execPileScrambleRow(targetCards) {
+            if (targetCards.size === 0) return;
+            const cardsArray = Array.from(targetCards);
+            const rowMap = new Map();
+            cardsArray.forEach(card => {
+                const y = parseInt(card.style.top || 0);
+                const rowKey = Math.round(y / GRID_HEIGHT);
+                if (!rowMap.has(rowKey)) rowMap.set(rowKey, []);
+                rowMap.get(rowKey).push(card);
+            });
+
+            const rowKeys = Array.from(rowMap.keys()).sort((a, b) => a - b);
+            const n = rowKeys.length;
+            if (n < 2) return;
+
+            const originalYPositions = rowKeys.map(key => rowMap.get(key)[0].style.top);
+            const indices = Array.from({length: n}, (_, i) => i);
+            for (let i = n - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+
+            rowKeys.forEach((oldKey, originalIndex) => {
+                const targetIndex = indices[originalIndex];
+                const newY = originalYPositions[targetIndex];
+                const cardsInRow = rowMap.get(oldKey);
+                cardsInRow.forEach(card => {
+                    card.style.top = newY;
+                    card.style.zIndex = zIndexCounter++;
+                });
+            });
+            incrementShuffleCount();
+        }
+
+        // 裏返す
+        async function execFlip(targetCards) {
+            targetCards.forEach(card => {
+                card.classList.toggle('flipped');
+            });
+        }
+
+        // DOMContentLoaded内の初期化部分に追加
+        function updateScrollContainerSize() {
+            const scaledWidth = canvas.offsetWidth * currentZoom;
+            const scaledHeight = canvas.offsetHeight * currentZoom;
+            scrollWrapper.style.width = `${scaledWidth}px`;
+            scrollWrapper.style.height = `${scaledHeight}px`;
+        }
         
         // 初期状態更新
         updateStatus();
+        updateScrollContainerSize();
     });
 </script>
 
