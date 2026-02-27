@@ -153,6 +153,38 @@
             position: relative;
             transform-origin: 0 0;
         }
+        /* ラベルバッジ */
+        .card-label-badge {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f59e0b;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 999px;
+            border: 1.5px solid white;
+            z-index: 20;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .card-label-badges {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 2px;
+            z-index: 20;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #control-panel button {
+            font-size: 1.2rem; /* お好みで 1.1rem や 1.125rem に調整可 */
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,6 +295,47 @@
                 </button>
             </div>
 
+            <!-- ラベル管理 -->
+            <div class="bg-yellow-50 p-3 rounded-lg space-y-2 border border-yellow-200">
+                <h3 class="font-bold text-yellow-800 text-sm">🏷 カードラベル管理</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="label-input" placeholder="ラベル名 (例: A)" maxlength="6"
+                        class="flex-1 p-2 border border-yellow-300 rounded text-sm bg-white">
+                    <button id="assign-label-btn"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded text-sm">付与</button>
+                    <button id="remove-label-btn"
+                        class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-1 px-3 rounded text-sm">削除</button>
+                </div>
+                <p class="text-xs text-gray-500">選択カードにラベルを付与/削除します。</p>
+
+                <div class="border-t border-yellow-200 pt-2 space-y-1">
+                    <h4 class="text-xs font-bold text-yellow-700">ラベル別シャッフル</h4>
+                    <select id="label-shuffle-target" class="w-full p-1 border border-yellow-300 rounded text-sm bg-white">
+                        <option value="__all__">全ラベル（それぞれ独立）</option>
+                    </select>
+                    <div class="flex space-x-2">
+                        <button id="label-pile-col-btn"
+                            class="flex-1 bg-pink-500 hover:bg-pink-600 text-white font-bold py-1 px-2 rounded text-xs">
+                            列スクランブル
+                        </button>
+                        <button id="label-pile-row-btn"
+                            class="flex-1 bg-pink-500 hover:bg-pink-600 text-white font-bold py-1 px-2 rounded text-xs">
+                            行スクランブル
+                        </button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="label-cut-h-btn"
+                            class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1 px-2 rounded text-xs">
+                            横カット
+                        </button>
+                        <button id="label-cut-v-btn"
+                            class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-1 px-2 rounded text-xs">
+                            縦カット
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <button id="add-card-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
                 カードを追加
             </button>
@@ -357,15 +430,36 @@
             </fieldset>
 
             <!-- ★★★ 共通設定エリア（枚数・行列設定） ★★★ -->
-            <div class="mt-4 p-4 bg-gray-100 rounded-md">
-                <label for="card-count" class="block font-semibold mb-1 text-gray-700">作製枚数 (N)</label>
-                <input type="number" id="card-count" name="cardCount" value="1" min="1" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2">
-                
-                <label class="flex items-center space-x-2 cursor-pointer mt-2">
-                    <input type="checkbox" id="create-as-matrix" name="createAsMatrix" class="form-checkbox h-5 w-5 text-blue-600">
-                    <span class="text-gray-700 font-semibold">N × N (行列) で配置</span>
-                </label>
-                <p class="text-xs text-gray-500 mt-1">※チェックを入れると、N行N列の合計N²枚が作成されます。</p>
+            <div class="mt-4 p-4 bg-gray-100 rounded-md space-y-3">
+                <div>
+                    <label class="block font-semibold mb-1 text-gray-700">配置モード</label>
+                    <div class="flex flex-col space-y-1 text-sm text-gray-700">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="layoutMode" value="single" checked class="form-radio h-4 w-4 text-blue-600">
+                            <span>通常（N枚）</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="layoutMode" value="nxn" class="form-radio h-4 w-4 text-blue-600">
+                            <span>N × N（正方行列）</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="layoutMode" value="nxm" class="form-radio h-4 w-4 text-blue-600">
+                            <span>N × M（矩形行列）</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="layout-n-area">
+                    <label class="block font-semibold mb-1 text-gray-700">N（行数 / 枚数）</label>
+                    <input type="number" id="card-count" name="cardCount" value="1" min="1"
+                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="layout-m-area" class="hidden">
+                    <label class="block font-semibold mb-1 text-gray-700">M（列数）</label>
+                    <input type="number" id="card-cols" name="cardCols" value="1" min="1"
+                        class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <p class="text-xs text-gray-500">N×N: N²枚 / N×M: N×M枚 配置</p>
             </div>
 
             <div class="mt-8 flex justify-end space-x-4">
@@ -441,6 +535,18 @@
         const protocolList = document.getElementById('protocol-list');
         const runProtocolBtn = document.getElementById('run-protocol-btn');
         const clearProtocolBtn = document.getElementById('clear-protocol-btn');
+        // ラベル管理
+        const labelInput = document.getElementById('label-input');
+        const assignLabelBtn = document.getElementById('assign-label-btn');
+        const removeLabelBtn = document.getElementById('remove-label-btn');
+        const labelShuffleTarget = document.getElementById('label-shuffle-target');
+        const labelPileColBtn = document.getElementById('label-pile-col-btn');
+        const labelPileRowBtn = document.getElementById('label-pile-row-btn');
+        const labelCutHBtn = document.getElementById('label-cut-h-btn');
+        const labelCutVBtn = document.getElementById('label-cut-v-btn');
+        // N×M モーダル
+        const layoutModeRadios = document.querySelectorAll('input[name="layoutMode"]');
+        const layoutMArea = document.getElementById('layout-m-area');
 
         let protocolQueue = [];
         let zIndexCounter = 1;
@@ -472,6 +578,53 @@
         cancelBtn.addEventListener('click', () => modal.close());
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
 
+        // --- 配置モード切替 ---
+        layoutModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                layoutMArea.classList.toggle('hidden', e.target.value !== 'nxm');
+            });
+        });
+
+        // --- ラベル付与/削除 ---
+        assignLabelBtn.addEventListener('click', () => {
+            const label = labelInput.value.trim();
+            if (!label) { showFeedback('ラベル名を入力してください'); return; }
+            if (selectedCards.size === 0) { showFeedback('カードを選択してください'); return; }
+            selectedCards.forEach(card => {
+                const current = getCardLabels(card);
+                if (!current.includes(label)) {
+                    setCardLabels(card, [...current, label]);
+                }
+                updateCardLabelBadge(card);
+            });
+            updateLabelSelect();
+            showFeedback(`「${label}」を${selectedCards.size}枚に付与しました`);
+        });
+
+        removeLabelBtn.addEventListener('click', () => {
+            const label = labelInput.value.trim();
+            if (selectedCards.size === 0) { showFeedback('カードを選択してください'); return; }
+            selectedCards.forEach(card => {
+                if (label) {
+                    // 入力欄に名前があれば、そのラベルだけ削除
+                    const current = getCardLabels(card);
+                    setCardLabels(card, current.filter(l => l !== label));
+                } else {
+                    // 入力欄が空なら全ラベル削除
+                    setCardLabels(card, []);
+                }
+                updateCardLabelBadge(card);
+            });
+            updateLabelSelect();
+            showFeedback(label ? `「${label}」を削除しました` : '全ラベルを削除しました');
+        });
+
+        // --- ラベル別シャッフル ---
+        labelPileColBtn.addEventListener('click', () => execLabelShuffle('pileCol'));
+        labelPileRowBtn.addEventListener('click', () => execLabelShuffle('pileRow'));
+        labelCutHBtn.addEventListener('click', () => execLabelShuffle('cutH'));
+        labelCutVBtn.addEventListener('click', () => execLabelShuffle('cutV'));
+
         cardTypeRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 playingCardOptions.classList.toggle('hidden', e.target.value !== 'playingCard');
@@ -502,68 +655,67 @@
             try {
                 const formData = new FormData(addCardForm);
                 const cardData = Object.fromEntries(formData.entries());
-                const count = parseInt(cardData.cardCount) || 1;
-                const isMatrix = createAsMatrixCheck ? createAsMatrixCheck.checked : false;
+                const n = parseInt(cardData.cardCount) || 1;
+                const m = parseInt(cardData.cardCols) || 1;
+                const layoutMode = cardData.layoutMode || 'single'; // 'single' | 'nxn' | 'nxm'
 
-                // ★★★ 修正: n を count から取得 ★★★
-                const n = count;
-
-                if (isMatrix) {
-                    // 行列配置 (N×N)
-                    const totalWidth = n * GRID_WIDTH;
-                    const totalHeight = n * GRID_HEIGHT;
+                const placeGrid = (rows, cols) => {
+                    const totalWidth = cols * GRID_WIDTH;
+                    const totalHeight = rows * GRID_HEIGHT;
                     const startX = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2) - (totalWidth / 2);
                     const startY = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2) - (totalHeight / 2);
-
-                    for (let r = 0; r < n; r++) {
-                        for (let c = 0; c < n; c++) {
-                            const singleCardData = { ...cardData };
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            const d = { ...cardData };
                             let left = startX + c * GRID_WIDTH;
-                            let top = startY + r * GRID_HEIGHT;
-
+                            let top  = startY + r * GRID_HEIGHT;
                             if (snapToGridCheck.checked) {
                                 left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
-                                top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                                top  = Math.round(top  / GRID_HEIGHT) * GRID_HEIGHT;
                             }
-
-                            singleCardData.left = `${left}px`;
-                            singleCardData.top = `${top}px`;
-                            singleCardData.zIndex = zIndexCounter++;
-                            createCard(singleCardData);
+                            d.left = `${left}px`;
+                            d.top  = `${top}px`;
+                            d.zIndex = zIndexCounter++;
+                            createCard(d);
                         }
                     }
+                };
+
+                if (layoutMode === 'nxn') {
+                    placeGrid(n, n);
+                } else if (layoutMode === 'nxm') {
+                    placeGrid(n, m);
                 } else {
                     // 通常配置（重ねて配置）
                     for (let i = 0; i < n; i++) {
-                        const singleCardData = { ...cardData };
+                        const d = { ...cardData };
                         const offsetX = (i % 5) * 20 - 40;
                         const offsetY = Math.floor(i / 5) * 20 - 20;
-
                         let left = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2) - 56 + offsetX;
-                        let top = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2) - 80 + offsetY;
-                        
+                        let top  = scrollContainer.scrollTop  + (scrollContainer.clientHeight / 2) - 80 + offsetY;
                         if (snapToGridCheck.checked) {
                             left = Math.round(left / GRID_WIDTH) * GRID_WIDTH;
-                            top = Math.round(top / GRID_HEIGHT) * GRID_HEIGHT;
+                            top  = Math.round(top  / GRID_HEIGHT) * GRID_HEIGHT;
                         }
-
-                        singleCardData.left = `${left}px`;
-                        singleCardData.top = `${top}px`;
-                        singleCardData.zIndex = zIndexCounter++;
-                        createCard(singleCardData);
+                        d.left = `${left}px`;
+                        d.top  = `${top}px`;
+                        d.zIndex = zIndexCounter++;
+                        createCard(d);
                     }
                 }
-                
+
                 updateStatus();
                 modal.close();
                 addCardForm.reset();
-                
-                // UI状態のリセット
+
+                // UI リセット
                 const playingRadio = document.querySelector('input[name="cardType"][value="playingCard"]');
                 if (playingRadio) playingRadio.checked = true;
-                    
+                const singleRadio = document.querySelector('input[name="layoutMode"][value="single"]');
+                if (singleRadio) singleRadio.checked = true;
+                layoutMArea.classList.add('hidden');
                 document.getElementById('card-count').value = '1';
-                if (createAsMatrixCheck) createAsMatrixCheck.checked = false;
+                document.getElementById('card-cols').value = '1';
                 playingCardOptions.classList.remove('hidden');
                 colorCardOptions.classList.add('hidden');
             } catch (error) {
@@ -1028,6 +1180,11 @@
                 });
             });
             cardContainer.appendChild(deleteBtn);
+            // ラベルバッジ
+            if (data.label) {
+                cardContainer.dataset.labels = data.labels;
+                updateCardLabelBadge(cardContainer);
+            }
             canvas.appendChild(cardContainer);
 
             makeDraggable(cardContainer);
@@ -1173,6 +1330,8 @@
                 cardData.zIndex = card.style.zIndex;
                 cardData.flipped = card.classList.contains('flipped');
                 cardData.selected = selectedCards.has(card);
+                // 複数ラベルはJSON文字列のままエクスポート
+                if (card.dataset.labels) cardData.labels = card.dataset.labels;
                 return cardData;
             });
 
@@ -1585,6 +1744,88 @@
             targetCards.forEach(card => {
                 card.classList.toggle('flipped');
             });
+        }
+
+        // ラベル管理
+        function getCardLabels(card) {
+            const raw = card.dataset.labels;
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        function setCardLabels(card, labels) {
+            const unique = [...new Set(labels)];
+            if (unique.length > 0) {
+                card.dataset.labels = JSON.stringify(unique);
+            } else {
+                delete card.dataset.labels;
+            }
+        }
+
+        function updateCardLabelBadge(card) {
+            let container = card.querySelector('.card-label-badges');
+            if (container) container.remove();
+            const labels = getCardLabels(card);
+            if (labels.length === 0) return;
+            container = document.createElement('div');
+            container.className = 'card-label-badges';
+            labels.forEach(lbl => {
+                const badge = document.createElement('div');
+                badge.className = 'card-label-badge';
+                // ラベルごとに色を変える
+                const colors = ['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316'];
+                const idx = [...lbl].reduce((s, c) => s + c.charCodeAt(0), 0) % colors.length;
+                badge.style.backgroundColor = colors[idx];
+                badge.textContent = lbl;
+                container.appendChild(badge);
+            });
+            card.appendChild(container);
+        }
+
+        // ---- ラベルセレクトボックス更新 ----
+        function updateLabelSelect() {
+            const cards = Array.from(canvas.querySelectorAll('.card-container'));
+            const labels = new Set();
+            cards.forEach(c => getCardLabels(c).forEach(l => labels.add(l)));
+            const current = labelShuffleTarget.value;
+            labelShuffleTarget.innerHTML = '<option value="__all__">全ラベル（それぞれ独立）</option>';
+            [...labels].sort().forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l;
+                opt.textContent = `ラベル「${l}」のみ`;
+                labelShuffleTarget.appendChild(opt);
+            });
+            if ([...labels, '__all__'].includes(current)) labelShuffleTarget.value = current;
+        }
+
+        // ---- ラベル別シャッフル実行 ----
+        function execLabelShuffle(type) {
+            const allCards = Array.from(canvas.querySelectorAll('.card-container'));
+            const target = labelShuffleTarget.value;
+
+            // ラベルごとにグループ化（1枚が複数ラベルを持つ場合、各ラベルグループに参加）
+            const groups = new Map();
+            allCards.forEach(card => {
+                getCardLabels(card).forEach(lbl => {
+                    if (target !== '__all__' && lbl !== target) return;
+                    if (!groups.has(lbl)) groups.set(lbl, []);
+                    groups.get(lbl).push(card);
+                });
+            });
+
+            if (groups.size === 0) { showFeedback('対象ラベル付きカードがありません'); return; }
+
+            groups.forEach((groupCards) => {
+                const cardSet = new Set(groupCards);
+                switch (type) {
+                    case 'pileCol': execPileScrambleCol(cardSet); break;
+                    case 'pileRow': execPileScrambleRow(cardSet); break;
+                    case 'cutH':   execRandomCutHorizon(cardSet); break;
+                    case 'cutV':   execRandomCutVertical(cardSet); break;
+                }
+            });
+
+            const typeLabel = { pileCol:'列スクランブル', pileRow:'行スクランブル', cutH:'横カット', cutV:'縦カット' }[type];
+            showFeedback(`ラベル別 ${typeLabel} 完了`);
         }
 
         // DOMContentLoaded内の初期化部分に追加
