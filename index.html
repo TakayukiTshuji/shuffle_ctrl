@@ -381,10 +381,13 @@
                     </div>
                 </div>
                 
+                <button id="export-pptx-btn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    PPTXエクスポート
+                </button>
                  <button id="export-layout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                     レイアウトをエクスポート
                 </button>
-                 <button id="import-layout-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                <button id="import-layout-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                     レイアウトをインポート
                 </button>
                 <input type="file" id="import-file-input" class="hidden" accept=".json">
@@ -481,7 +484,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const {icpRenderer} = require('electron');
+        const {ipcRenderer} = require('electron');
         const board = document.getElementById('board');
         const scrollContainer = document.getElementById('scroll-container');
         const scrollWrapper = document.getElementById('scroll-wrapper');
@@ -547,6 +550,7 @@
         // N×M モーダル
         const layoutModeRadios = document.querySelectorAll('input[name="layoutMode"]');
         const layoutMArea = document.getElementById('layout-m-area');
+        const exportPptxBtn = document.getElementById('export-pptx-btn');
 
         let protocolQueue = [];
         let zIndexCounter = 1;
@@ -569,7 +573,7 @@
 
         if(updateBtn) {
             updateBtn.addEventListener('click', () => {
-                icpRenderer.send('manual-update-check');
+                ipcRenderer.send('manual-update-check');
             });
         }
         
@@ -953,6 +957,29 @@
         });
         confirmCancelBtn.addEventListener('click', () => confirmModal.close());
 
+        exportPptxBtn.addEventListener('click', () => {
+            const cards = Array.from(canvas.querySelectorAll('.card-container'));
+            if (cards.length === 0) {
+                showFeedback('エクスポートするカードがありません。');
+                return;
+            }
+            const cardDataList = cards.map(card => ({
+                left: card.style.left,
+                top: card.style.top,
+                zIndex: card.style.zIndex,
+                cardType: card.dataset.cardType,
+                suit: card.dataset.suit,
+                color: card.dataset.color,
+                flipped: card.classList.contains('flipped'),
+                labels: card.dataset.labels || null,
+            }));
+            ipcRenderer.send('export-pptx', cardDataList);
+            showFeedback('PPTXを生成中...');
+        });
+
+        ipcRenderer.on('export-pptx-result', (_event, result) => {
+            showFeedback(result.message);
+        });
         exportLayoutBtn.addEventListener('click', exportLayout);
         importLayoutBtn.addEventListener('click', () => importFileInput.click());
         importFileInput.addEventListener('change', importLayout);
