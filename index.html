@@ -194,7 +194,7 @@
     <div class="flex h-screen w-screen">
         <!-- 左側のカード配置エリア -->
         <main id="board" class="flex-grow h-full bg-gray-700 relative shadow-inner overflow-hidden">
-            <div id="scroll-container" style="width: 100%; height: 100%; overflow: auto; position: relative;">
+            <div id="scroll-container" style="width: 100%; height: 100%; overflow: auto; position: relative; background-color: #166534;">
                 <div id="scroll-wrapper" style="position: relative; transform-origin: 0 0;">
                     <div id="canvas" class="relative bg-green-800">
                         <div id="selection-box"></div>
@@ -245,6 +245,12 @@
                 <div class="flex items-center space-x-2">
                     <button id="zoom-reset-btn" class="text-xs bg-white hover:bg-gray-100 px-2 py-1 rounded shadow w-full">100%に戻す</button>
                 </div>
+            </div>
+            <!-- 表示設定セクション内に追加 -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-gray-600">文字サイズ:</span>
+                <input type="range" id="font-size-slider" min="10" max="24" step="1" value="14" class="w-full cursor-pointer">
+                <span id="font-size-value" class="text-xs font-bold w-10 text-right">14px</span>
             </div>
 
             <!-- プロトコル作成UI -->
@@ -552,6 +558,9 @@
         const layoutMArea = document.getElementById('layout-m-area');
         const exportPptxBtn = document.getElementById('export-pptx-btn');
 
+        const fontSizeSlider = document.getElementById('font-size-slider');
+        const fontSizeValue = document.getElementById('font-size-value');
+
         let protocolQueue = [];
         let zIndexCounter = 1;
         let confirmCallback = null;
@@ -728,11 +737,11 @@
         });
 
         clearLayoutBtn.addEventListener('click', () => {
-             showConfirm('本当にすべてのカードを削除しますか？', () => {
-                canvas.innerHTML = '';
+            showConfirm('本当にすべてのカードを削除しますか？', () => {
+                Array.from(canvas.querySelectorAll('.card-container')).forEach(c => c.remove());
                 zIndexCounter = 1;
                 clearSelection();
-                updateStatus(); // ★★★ 更新
+                updateStatus();
             });
         });
 
@@ -1058,6 +1067,17 @@
 
         runProtocolBtn.addEventListener('click', runProtocol);
 
+        fontSizeSlider.addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            fontSizeValue.textContent = `${size}px`;
+            // カードのトランプ記号サイズを変更
+            document.querySelectorAll('#canvas .card-front .text-7xl').forEach(el => {
+                el.style.fontSize = `${size * 4}px`;  // 記号は文字サイズの4倍
+            });
+            // コントロールパネルのボタン文字サイズ
+            document.getElementById('control-panel').style.fontSize = `${size}px`;
+        });
+
 
         // --- 関数定義 ---
 
@@ -1262,7 +1282,7 @@
                 const moveX = isTouchEvent ? e.touches[0].clientX : e.clientX;
                 const moveY = isTouchEvent ? e.touches[0].clientY : e.clientY;
 
-                if (!didMove && (Math.abs(moveX - dragStartPos.x) > 5 || Math.abs(moveY - dragStartPos.y) > 5)) {
+                if (!didMove && (Math.abs(moveX - dragStartPos.x) / currentZoom > 5 || Math.abs(moveY - dragStartPos.y) / currentZoom > 5)) {
                     didMove = true;
                     element.didMove = true;
                     
@@ -1284,8 +1304,8 @@
                 }
 
                 if (didMove) {
-                    const deltaX = moveX - dragStartPos.x;
-                    const deltaY = moveY - dragStartPos.y;
+                    const deltaX = (moveX - dragStartPos.x) / currentZoom;
+                    const deltaY = (moveY - dragStartPos.y) / currentZoom;
                     selectedCards.forEach(card => {
                         const initialPos = initialPositions.get(card);
                         if (initialPos) {
@@ -1384,11 +1404,12 @@
                     const layoutData = JSON.parse(e.target.result);
                     if (!Array.isArray(layoutData)) throw new Error('無効なファイル形式です。');
                     showConfirm('現在のレイアウトをクリアしてインポートしますか？', () => {
-                        canvas.innerHTML = '';
+                        Array.from(canvas.querySelectorAll('.card-container')).forEach(c => c.remove());
                         clearSelection();
                         zIndexCounter = 1;
                         layoutData.forEach(cardData => createCard(cardData));
-                        updateStatus(); // ★★★ 更新
+                        updateLabelSelect();
+                        updateStatus();
                         showFeedback('レイアウトをインポートしました！');
                     });
                 } catch (error) {
